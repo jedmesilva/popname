@@ -52,7 +52,7 @@ export function SearchResults() {
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 pt-8 pb-6">
           <button
-            onClick={() => setLocation("/explorar")}
+            onClick={() => setLocation("/index")}
             className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors mb-4"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao índice

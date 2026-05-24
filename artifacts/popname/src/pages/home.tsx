@@ -313,7 +313,7 @@ export function Home() {
                   ))}
               </div>
               <Link
-                href="/explorar"
+                href="/index"
                 data-testid="link-explore-decade"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
@@ -370,7 +370,7 @@ export function Home() {
                 </div>
               )}
               <Link
-                href="/explorar"
+                href="/index"
                 data-testid="link-explore-rare"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >

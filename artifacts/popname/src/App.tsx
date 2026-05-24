@@ -39,7 +39,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/nome/:name" component={NameDetail} />
-        <Route path="/explorar" component={Explore} />
+        <Route path="/index" component={Explore} />
         <Route path="/tendencias" component={Trends} />
         <Route path="/reivindicar" component={Claim} />
         <Route path="/buscar" component={SearchResults} />

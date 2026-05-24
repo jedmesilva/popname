@@ -8,7 +8,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navLinks = [
     { href: "/", label: "INÍCIO" },
-    { href: "/explorar", label: "ÍNDICE" },
+    { href: "/index", label: "ÍNDICE" },
     { href: "/tendencias", label: "TENDÊNCIAS" },
     { href: "/crescimento", label: "CRESCIMENTO" },
   ];
@@ -89,7 +89,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div>© {new Date().getFullYear()} POPNAME. O índice da civilização.</div>
           <div className="flex gap-6">
             <a href="#" className="hover:text-foreground transition-colors">Sobre</a>
-            <a href="#" className="hover:text-foreground transition-colors">API</a>
             <a href="#" className="hover:text-foreground transition-colors">Privacidade</a>
           </div>
         </div>
