@@ -353,7 +353,7 @@ router.get("/names/:name/countries", async (req, res): Promise<void> => {
   );
   res.json(rows.map((c: any) => ({
     country: c.birth_country ?? "Unknown",
-    countryCode: "",
+    countryCode: c.birth_country ?? "",
     count: Number(c.total),
     percentage: grandTotal > 0 ? Math.round((Number(c.total) / grandTotal) * 100) : 0,
   })));
@@ -409,7 +409,7 @@ router.get("/names/:name", async (req, res): Promise<void> => {
     gender: meaning?.gender_association ?? "neutral",
     topCountries: regionRows.map((c: any) => ({
       country: c.birth_country,
-      countryCode: "",
+      countryCode: c.birth_country ?? "",
       count: Number(c.total),
       percentage: totalClaims ? Math.round((Number(c.total) / totalClaims) * 100) : 0,
     })),

@@ -4,6 +4,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { ArrowLeft, Globe, History, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import * as Flags from "country-flag-icons/react/3x2";
+
+const COUNTRY_NAMES: Record<string, string> = {
+  AR: "Argentina", AU: "Austrália", BR: "Brasil", CA: "Canadá",
+  CL: "Chile", CN: "China", CO: "Colômbia", DE: "Alemanha",
+  ES: "Espanha", FR: "França", GB: "Reino Unido", IN: "Índia",
+  IT: "Itália", JP: "Japão", MX: "México", NG: "Nigéria",
+  PT: "Portugal", RU: "Rússia", US: "Estados Unidos", ZA: "África do Sul",
+};
 
 export function NameDetail() {
   const params = useParams();
@@ -109,20 +118,27 @@ export function NameDetail() {
                 <Globe className="w-4 h-4" /> Top Países
               </h2>
               <div className="flex-1 flex flex-col gap-6">
-                {detail.topCountries?.map((country, idx) => (
-                  <div key={country.countryCode} className="space-y-2">
-                    <div className="flex justify-between font-mono text-sm uppercase">
-                      <span>{idx + 1}. {country.country}</span>
-                      <span className="text-muted-foreground">{country.percentage}%</span>
+                {detail.topCountries?.map((country, idx) => {
+                  const FlagComponent = (Flags as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[country.countryCode ?? ""];
+                  const countryName = COUNTRY_NAMES[country.countryCode ?? ""] ?? country.country;
+                  return (
+                    <div key={country.countryCode ?? idx} className="space-y-2">
+                      <div className="flex justify-between font-mono text-sm uppercase">
+                        <span className="flex items-center gap-2">
+                          {FlagComponent && <FlagComponent className="w-5 h-auto rounded-sm shrink-0" />}
+                          <span>{idx + 1}. {countryName}</span>
+                        </span>
+                        <span className="text-muted-foreground">{country.percentage}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full bg-accent"
+                          style={{ width: `${country.percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 w-full bg-muted overflow-hidden">
-                      <div 
-                        className="h-full bg-accent" 
-                        style={{ width: `${country.percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {!detail.topCountries?.length && (
                   <div className="flex-1 flex items-center justify-center text-muted-foreground uppercase font-mono text-sm">
                     Sem dados geográficos
