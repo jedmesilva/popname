@@ -22,13 +22,12 @@ async function fetchRealSparklines(
 
   const currentYear = new Date().getFullYear();
 
-  // Get global date range so sparkline covers all available history
+  // Get global year range from name_history (verified civil registrations)
   const { rows: rangeRows } = await pool.query(
     `SELECT
-       MIN(EXTRACT(YEAR FROM registration_date))::int AS min_yr,
-       MAX(EXTRACT(YEAR FROM registration_date))::int AS max_yr
-     FROM names
-     WHERE registration_date IS NOT NULL`
+       MIN(EXTRACT(YEAR FROM periodo))::int AS min_yr,
+       MAX(EXTRACT(YEAR FROM periodo))::int AS max_yr
+     FROM name_history`
   );
   const sparkYearFrom = rangeRows[0]?.min_yr ?? currentYear - 9;
   const sparkYearTo   = rangeRows[0]?.max_yr ?? currentYear;
@@ -39,12 +38,11 @@ async function fetchRealSparklines(
   const { rows } = await pool.query(
     `SELECT
        LOWER(name_text) AS name_lower,
-       FLOOR((EXTRACT(YEAR FROM registration_date) - $2) / $3)::int AS bucket,
-       COUNT(*)::int AS cnt
-     FROM names
+       FLOOR((EXTRACT(YEAR FROM periodo) - $2) / $3)::int AS bucket,
+       SUM(total_nome)::int AS cnt
+     FROM name_history
      WHERE LOWER(name_text) = ANY($1::text[])
-       AND registration_date IS NOT NULL
-       AND EXTRACT(YEAR FROM registration_date) BETWEEN $2 AND $4
+       AND EXTRACT(YEAR FROM periodo) BETWEEN $2 AND $4
      GROUP BY name_lower, bucket
      ORDER BY name_lower, bucket`,
     [nameList.map(n => n.toLowerCase()), sparkYearFrom, bucketSize, sparkYearTo]
@@ -349,7 +347,7 @@ router.get("/names/browse", async (req, res): Promise<void> => {
   const nameList = rows.map((r: any) => r.name as string);
 
   // Determine the sparkline range from the active period filter.
-  // When no filter is set, use the actual min/max registration year in the DB.
+  // When no filter is set, use the actual min/max year in name_history.
   const currentYear = new Date().getFullYear();
   let sparkYearFrom: number;
   let sparkYearTo: number;
@@ -360,32 +358,41 @@ router.get("/names/browse", async (req, res): Promise<void> => {
   } else {
     const { rows: rangeRows } = await pool.query(
       `SELECT
-         MIN(EXTRACT(YEAR FROM registration_date))::int AS min_yr,
-         MAX(EXTRACT(YEAR FROM registration_date))::int AS max_yr
-       FROM names
-       WHERE registration_date IS NOT NULL`
+         MIN(EXTRACT(YEAR FROM periodo))::int AS min_yr,
+         MAX(EXTRACT(YEAR FROM periodo))::int AS max_yr
+       FROM name_history`
     );
     sparkYearFrom = rangeRows[0]?.min_yr ?? currentYear - 9;
     sparkYearTo   = rangeRows[0]?.max_yr ?? currentYear;
   }
-  const rangeYears     = Math.max(sparkYearTo - sparkYearFrom + 1, 1);
+  const rangeYears = Math.max(sparkYearTo - sparkYearFrom + 1, 1);
 
   // Bucket into ~10 points regardless of how wide the range is
   const bucketSize = Math.max(1, Math.ceil(rangeYears / 10));
   const numBuckets = Math.ceil(rangeYears / bucketSize);
 
+  // Build params with optional country filter
+  const sparkParams: any[] = [
+    nameList.map((n: string) => n.toLowerCase()),
+    sparkYearFrom,
+    bucketSize,
+    sparkYearTo,
+  ];
+  const sparkCountryFilter = country ? `AND LOWER(birth_country) = LOWER($5)` : "";
+  if (country) sparkParams.push(country);
+
   const { rows: sparkRows } = await pool.query(
     `SELECT
        LOWER(name_text) AS name_lower,
-       FLOOR((EXTRACT(YEAR FROM registration_date) - $2) / $3)::int AS bucket,
-       COUNT(*)::int AS cnt
-     FROM names
+       FLOOR((EXTRACT(YEAR FROM periodo) - $2) / $3)::int AS bucket,
+       SUM(total_nome)::int AS cnt
+     FROM name_history
      WHERE LOWER(name_text) = ANY($1::text[])
-       AND registration_date IS NOT NULL
-       AND EXTRACT(YEAR FROM registration_date) BETWEEN $2 AND $4
+       AND EXTRACT(YEAR FROM periodo) BETWEEN $2 AND $4
+       ${sparkCountryFilter}
      GROUP BY name_lower, bucket
      ORDER BY name_lower, bucket`,
-    [nameList.map((n: string) => n.toLowerCase()), sparkYearFrom, bucketSize, sparkYearTo]
+    sparkParams
   );
 
   // Build fixed-length sparklines (numBuckets points, zeros for empty buckets)

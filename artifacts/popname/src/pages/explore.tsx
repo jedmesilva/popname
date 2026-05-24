@@ -110,7 +110,7 @@ function NameCard({ name, count, countries, sort, changePercent, sparkline, card
               {rising ? "+" : ""}{Math.abs(changePercent!).toFixed(0)}%
             </div>
             <div className="font-mono text-[9px] text-muted-foreground whitespace-nowrap mt-0.5">
-              último ano
+              variação histórica
             </div>
           </div>
         )}
