@@ -80,7 +80,7 @@ router.get("/names/trending", async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { limit = 10 } = parsed.data;
   const { rows } = await pool.query(
-    `SELECT ng.name_id, ng.name, ng.current_count, ng.absolute_growth,
+    `SELECT ng.name_id, ng.name, ng.current_count, ng.absolute_growth, ng.growth_percent,
             COALESCE(rc.country_count, 0) AS country_count
      FROM name_growth ng
      LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = ng.name_id
@@ -101,7 +101,7 @@ router.get("/names/trending", async (req, res): Promise<void> => {
       name: r.name,
       count: Number(r.current_count),
       countries: Number(r.country_count),
-      changePercent: Number(r.absolute_growth),
+      changePercent: r.growth_percent !== null ? Number(r.growth_percent) : null,
       trend: "rising" as const,
       sparkline: spark.map((s: any) => s.cnt),
     };
@@ -115,7 +115,7 @@ router.get("/names/declining", async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { limit = 10 } = parsed.data;
   const { rows } = await pool.query(
-    `SELECT nd.name_id, nd.name, nd.current_count, nd.absolute_change,
+    `SELECT nd.name_id, nd.name, nd.current_count, nd.absolute_change, nd.decline_percent,
             COALESCE(rc.country_count, 0) AS country_count
      FROM name_decline nd
      LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = nd.name_id
@@ -136,7 +136,7 @@ router.get("/names/declining", async (req, res): Promise<void> => {
       name: r.name,
       count: Number(r.current_count),
       countries: Number(r.country_count),
-      changePercent: Number(r.absolute_change),
+      changePercent: r.decline_percent !== null ? Number(r.decline_percent) : null,
       trend: "falling" as const,
       sparkline: spark.map((s: any) => s.cnt),
     };
