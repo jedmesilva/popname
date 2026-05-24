@@ -272,6 +272,7 @@ router.get("/names/rare", async (req, res): Promise<void> => {
      FROM name_rarity nr
      JOIN names n ON n.id = nr.name_id
      LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = nr.name_id
+     WHERE nr.total_claims > 0
      ORDER BY nr.rarity_rank LIMIT $1`,
     [limit]
   );
