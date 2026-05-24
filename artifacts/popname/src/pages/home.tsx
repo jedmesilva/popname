@@ -419,6 +419,24 @@ export function Home() {
   );
 }
 
+function SvgSparkline({ values, color }: { values: number[]; color: string }) {
+  if (values.length < 2) return null;
+  const W = 64, H = 24, pad = 1.5;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const points = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (W - pad * 2);
+    const y = pad + (1 - (v - min) / range) * (H - pad * 2);
+    return `${x},${y}`;
+  });
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none">
+      <polyline points={points.join(" ")} stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function TrendRowSmall({
   name, rank, change, sparkline, rising
 }: {
@@ -428,7 +446,6 @@ function TrendRowSmall({
   sparkline: number[];
   rising: boolean;
 }) {
-  const chartData = sparkline.map((val, i) => ({ i, val }));
   const color = rising ? "hsl(var(--accent))" : "hsl(var(--destructive))";
 
   return (
@@ -440,20 +457,7 @@ function TrendRowSmall({
       <span className="font-mono text-sm text-muted-foreground w-5">{rank}.</span>
       <span className="flex-1 font-bold uppercase group-hover:text-accent transition-colors">{name}</span>
       <div className="w-16 h-6 hidden sm:block">
-        {chartData.length > 0 && (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <Line
-                type="monotone"
-                dataKey="val"
-                stroke={color}
-                strokeWidth={1.5}
-                dot={false}
-                isAnimationActive={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
+        <SvgSparkline values={sparkline} color={color} />
       </div>
       <span
         className={`font-mono text-sm font-bold w-16 text-right ${
