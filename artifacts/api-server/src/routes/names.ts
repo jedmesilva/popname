@@ -15,51 +15,62 @@ import {
 
 const router: IRouter = Router();
 
-async function fetchRealSparklines(
-  nameList: string[]
+// Fetches participacao_pct per year per name directly from name_history.
+// Global % = SUM(total_nome for name+year) / SUM(all registrations for year).
+// Supports optional country / yearFrom / yearTo filters.
+async function fetchHistorySparklines(
+  nameList: string[],
+  opts: { country?: string | null; yearFrom?: number | null; yearTo?: number | null } = {}
 ): Promise<Map<string, number[]>> {
   if (nameList.length === 0) return new Map();
 
-  const currentYear = new Date().getFullYear();
+  const { country, yearFrom, yearTo } = opts;
+  const params: any[] = [nameList.map(n => n.toLowerCase())];
+  let idx = 2;
 
-  // Get global year range from name_history (verified civil registrations)
-  const { rows: rangeRows } = await pool.query(
-    `SELECT
-       MIN(EXTRACT(YEAR FROM periodo))::int AS min_yr,
-       MAX(EXTRACT(YEAR FROM periodo))::int AS max_yr
-     FROM name_history`
-  );
-  const sparkYearFrom = rangeRows[0]?.min_yr ?? currentYear - 9;
-  const sparkYearTo   = rangeRows[0]?.max_yr ?? currentYear;
-  const rangeYears    = Math.max(sparkYearTo - sparkYearFrom + 1, 1);
-  const bucketSize    = Math.max(1, Math.ceil(rangeYears / 10));
-  const numBuckets    = Math.ceil(rangeYears / bucketSize);
+  const pCountry  = country    != null ? idx++ : 0; if (pCountry)  params.push(country);
+  const pFrom     = yearFrom   != null ? idx++ : 0; if (pFrom)     params.push(yearFrom);
+  const pTo       = yearTo     != null ? idx++ : 0; if (pTo)       params.push(yearTo);
+
+  // Same condition applied to both CTEs (param indices are query-scoped)
+  const sharedCond = [
+    pCountry ? `AND LOWER(birth_country) = LOWER($${pCountry})` : "",
+    pFrom    ? `AND EXTRACT(YEAR FROM periodo) >= $${pFrom}`    : "",
+    pTo      ? `AND EXTRACT(YEAR FROM periodo) <= $${pTo}`      : "",
+  ].join(" ");
 
   const { rows } = await pool.query(
-    `SELECT
-       LOWER(name_text) AS name_lower,
-       FLOOR((EXTRACT(YEAR FROM periodo) - $2) / $3)::int AS bucket,
-       SUM(total_nome)::int AS cnt
-     FROM name_history
-     WHERE LOWER(name_text) = ANY($1::text[])
-       AND EXTRACT(YEAR FROM periodo) BETWEEN $2 AND $4
-     GROUP BY name_lower, bucket
-     ORDER BY name_lower, bucket`,
-    [nameList.map(n => n.toLowerCase()), sparkYearFrom, bucketSize, sparkYearTo]
+    `WITH yearly_totals AS (
+       SELECT
+         EXTRACT(YEAR FROM periodo)::int AS yr,
+         SUM(total_nome)::bigint         AS total_all
+       FROM name_history
+       WHERE 1=1 ${sharedCond}
+       GROUP BY yr
+     ),
+     name_yearly AS (
+       SELECT
+         LOWER(name_text)                AS name_lower,
+         EXTRACT(YEAR FROM periodo)::int AS yr,
+         SUM(total_nome)::bigint         AS total_name
+       FROM name_history
+       WHERE LOWER(name_text) = ANY($1::text[])
+         ${sharedCond}
+       GROUP BY name_lower, yr
+     )
+     SELECT
+       ny.name_lower,
+       ny.yr,
+       ROUND(ny.total_name::numeric / NULLIF(yt.total_all, 0) * 100, 6)::float AS pct
+     FROM name_yearly ny
+     JOIN yearly_totals yt ON yt.yr = ny.yr
+     ORDER BY ny.name_lower, ny.yr`,
+    params
   );
 
   const sparkMap = new Map<string, number[]>();
-  for (const name of nameList) {
-    sparkMap.set(name.toLowerCase(), Array(numBuckets).fill(0));
-  }
-  for (const r of rows) {
-    const key = r.name_lower as string;
-    const b   = Number(r.bucket);
-    if (b >= 0 && b < numBuckets) {
-      const arr = sparkMap.get(key);
-      if (arr) arr[b] = Number(r.cnt);
-    }
-  }
+  for (const name of nameList) sparkMap.set(name.toLowerCase(), []);
+  for (const r of rows) sparkMap.get(r.name_lower as string)?.push(Number(r.pct));
   return sparkMap;
 }
 
@@ -181,7 +192,7 @@ router.get("/names/trending", async (req, res): Promise<void> => {
   );
 
   const nameList   = rows.map((r: any) => r.name as string);
-  const sparkMap   = await fetchRealSparklines(nameList);
+  const sparkMap   = await fetchHistorySparklines(nameList);
 
   res.json(rows.map((r: any) => ({
     name: r.name,
@@ -239,7 +250,7 @@ router.get("/names/declining", async (req, res): Promise<void> => {
   );
 
   const nameList = rows.map((r: any) => r.name as string);
-  const sparkMap = await fetchRealSparklines(nameList);
+  const sparkMap = await fetchHistorySparklines(nameList);
 
   res.json(rows.map((r: any) => ({
     name: r.name,
@@ -346,78 +357,16 @@ router.get("/names/browse", async (req, res): Promise<void> => {
 
   const nameList = rows.map((r: any) => r.name as string);
 
-  // Determine the sparkline range from the active period filter.
-  // When no filter is set, use the actual min/max year in name_history.
-  const currentYear = new Date().getFullYear();
-  let sparkYearFrom: number;
-  let sparkYearTo: number;
+  // Use participacao_pct from name_history directly — no rebucketing needed
+  const sparkMap = await fetchHistorySparklines(nameList, { country, yearFrom, yearTo });
 
-  if (yearFrom != null || yearTo != null) {
-    sparkYearFrom = yearFrom ?? currentYear - 9;
-    sparkYearTo   = yearTo   ?? currentYear;
-  } else {
-    const { rows: rangeRows } = await pool.query(
-      `SELECT
-         MIN(EXTRACT(YEAR FROM periodo))::int AS min_yr,
-         MAX(EXTRACT(YEAR FROM periodo))::int AS max_yr
-       FROM name_history`
-    );
-    sparkYearFrom = rangeRows[0]?.min_yr ?? currentYear - 9;
-    sparkYearTo   = rangeRows[0]?.max_yr ?? currentYear;
-  }
-  const rangeYears = Math.max(sparkYearTo - sparkYearFrom + 1, 1);
-
-  // Bucket into ~10 points regardless of how wide the range is
-  const bucketSize = Math.max(1, Math.ceil(rangeYears / 10));
-  const numBuckets = Math.ceil(rangeYears / bucketSize);
-
-  // Build params with optional country filter
-  const sparkParams: any[] = [
-    nameList.map((n: string) => n.toLowerCase()),
-    sparkYearFrom,
-    bucketSize,
-    sparkYearTo,
-  ];
-  const sparkCountryFilter = country ? `AND LOWER(birth_country) = LOWER($5)` : "";
-  if (country) sparkParams.push(country);
-
-  const { rows: sparkRows } = await pool.query(
-    `SELECT
-       LOWER(name_text) AS name_lower,
-       FLOOR((EXTRACT(YEAR FROM periodo) - $2) / $3)::int AS bucket,
-       SUM(total_nome)::int AS cnt
-     FROM name_history
-     WHERE LOWER(name_text) = ANY($1::text[])
-       AND EXTRACT(YEAR FROM periodo) BETWEEN $2 AND $4
-       ${sparkCountryFilter}
-     GROUP BY name_lower, bucket
-     ORDER BY name_lower, bucket`,
-    sparkParams
-  );
-
-  // Build fixed-length sparklines (numBuckets points, zeros for empty buckets)
-  const sparkMap = new Map<string, number[]>();
-  for (const name of nameList) {
-    sparkMap.set(name.toLowerCase(), Array(numBuckets).fill(0));
-  }
-  for (const r of sparkRows) {
-    const key    = r.name_lower as string;
-    const bucket = Number(r.bucket);
-    if (bucket >= 0 && bucket < numBuckets) {
-      const arr = sparkMap.get(key);
-      if (arr) arr[bucket] = Number(r.cnt);
-    }
-  }
-
-  // Derive changePercent from the sparkline (first half vs second half)
-  // so the % and the chart always agree
+  // changePercent = variation of participacao_pct from first to last year
   const trendMap = new Map<string, number | null>();
-  const mid = Math.floor(numBuckets / 2);
   for (const [key, spark] of sparkMap) {
-    const first = spark.slice(0, mid).reduce((a, b) => a + b, 0);
-    const last  = spark.slice(mid).reduce((a, b) => a + b, 0);
-    if (first === 0 && last === 0) { trendMap.set(key, null); continue; }
-    if (first === 0) { trendMap.set(key, 100); continue; }
+    if (spark.length === 0) { trendMap.set(key, null); continue; }
+    const first = spark[0];
+    const last  = spark[spark.length - 1];
+    if (first === 0) { trendMap.set(key, last > 0 ? 100 : null); continue; }
     trendMap.set(key, Math.round(((last - first) / first) * 100));
   }
 
