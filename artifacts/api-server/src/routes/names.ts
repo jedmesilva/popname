@@ -74,25 +74,63 @@ router.get("/names/popular", async (req, res): Promise<void> => {
   })));
 });
 
-// GET /names/trending — from name_growth view
+const PERIOD_TO_INTERVAL: Record<string, string> = {
+  "1m": "30 days",
+  "6m": "180 days",
+  "1y": "365 days",
+  "5y": "1825 days",
+};
+
+// GET /names/trending — dynamic period comparison
 router.get("/names/trending", async (req, res): Promise<void> => {
   const parsed = GetTrendingNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const { limit = 10 } = parsed.data;
+  const { period = "1y", limit = 10 } = parsed.data;
+  const interval = PERIOD_TO_INTERVAL[period] ?? "365 days";
+
   const { rows } = await pool.query(
-    `SELECT ng.name_id, ng.name, ng.current_count, ng.absolute_growth, ng.growth_percent,
+    `WITH current_period AS (
+       SELECT name_id, COUNT(*)::bigint AS current_count
+       FROM name_claims
+       WHERE status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '${interval}'
+       GROUP BY name_id
+     ), previous_period AS (
+       SELECT name_id, COUNT(*)::bigint AS previous_count
+       FROM name_claims
+       WHERE status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '${interval}' * 2
+         AND verified_at <  NOW() - INTERVAL '${interval}'
+       GROUP BY name_id
+     )
+     SELECT n.id AS name_id, n.name,
+            COALESCE(cp.current_count, 0) AS current_count,
+            COALESCE(pp.previous_count, 0) AS previous_count,
+            COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0) AS absolute_growth,
+            CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN NULL
+                 ELSE ROUND(
+                   (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
+                   / COALESCE(pp.previous_count, 1)::numeric * 100, 2
+                 )
+            END AS growth_percent,
             COALESCE(rc.country_count, 0) AS country_count
-     FROM name_growth ng
-     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = ng.name_id
-     ORDER BY ng.absolute_growth DESC LIMIT $1`,
+     FROM names n
+     JOIN current_period cp ON cp.name_id = n.id
+     LEFT JOIN previous_period pp ON pp.name_id = n.id
+     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = n.id
+     WHERE COALESCE(cp.current_count, 0) > COALESCE(pp.previous_count, 0)
+     ORDER BY absolute_growth DESC
+     LIMIT $1`,
     [limit]
   );
+
+  const sparkInterval = interval;
   const result = await Promise.all(rows.map(async (r: any) => {
     const { rows: spark } = await pool.query(
       `SELECT COUNT(*)::int AS cnt
        FROM name_claims
        WHERE name_id = $1 AND status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '10 months'
+         AND verified_at >= NOW() - INTERVAL '${sparkInterval}'
        GROUP BY DATE_TRUNC('month', verified_at)
        ORDER BY DATE_TRUNC('month', verified_at)`,
       [r.name_id]
@@ -109,25 +147,56 @@ router.get("/names/trending", async (req, res): Promise<void> => {
   res.json(result);
 });
 
-// GET /names/declining — from name_decline view
+// GET /names/declining — dynamic period comparison
 router.get("/names/declining", async (req, res): Promise<void> => {
   const parsed = GetDecliningNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const { limit = 10 } = parsed.data;
+  const { period = "5y", limit = 10 } = parsed.data;
+  const interval = PERIOD_TO_INTERVAL[period] ?? "1825 days";
+
   const { rows } = await pool.query(
-    `SELECT nd.name_id, nd.name, nd.current_count, nd.absolute_change, nd.decline_percent,
+    `WITH current_period AS (
+       SELECT name_id, COUNT(*)::bigint AS current_count
+       FROM name_claims
+       WHERE status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '${interval}'
+       GROUP BY name_id
+     ), previous_period AS (
+       SELECT name_id, COUNT(*)::bigint AS previous_count
+       FROM name_claims
+       WHERE status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '${interval}' * 2
+         AND verified_at <  NOW() - INTERVAL '${interval}'
+       GROUP BY name_id
+     )
+     SELECT n.id AS name_id, n.name,
+            COALESCE(cp.current_count, 0) AS current_count,
+            COALESCE(pp.previous_count, 0) AS previous_count,
+            COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0) AS absolute_change,
+            CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN NULL
+                 ELSE ROUND(
+                   (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
+                   / COALESCE(pp.previous_count, 1)::numeric * 100, 2
+                 )
+            END AS decline_percent,
             COALESCE(rc.country_count, 0) AS country_count
-     FROM name_decline nd
-     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = nd.name_id
-     ORDER BY nd.absolute_change ASC LIMIT $1`,
+     FROM names n
+     JOIN previous_period pp ON pp.name_id = n.id
+     LEFT JOIN current_period cp ON cp.name_id = n.id
+     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = n.id
+     WHERE COALESCE(cp.current_count, 0) < COALESCE(pp.previous_count, 0)
+     ORDER BY absolute_change ASC
+     LIMIT $1`,
     [limit]
   );
+
+  const sparkInterval = interval;
   const result = await Promise.all(rows.map(async (r: any) => {
     const { rows: spark } = await pool.query(
       `SELECT COUNT(*)::int AS cnt
        FROM name_claims
        WHERE name_id = $1 AND status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '10 months'
+         AND verified_at >= NOW() - INTERVAL '${sparkInterval}'
        GROUP BY DATE_TRUNC('month', verified_at)
        ORDER BY DATE_TRUNC('month', verified_at)`,
       [r.name_id]
