@@ -403,39 +403,6 @@ export function Home() {
         </div>
       </section>
 
-      {/* Footer stats */}
-      <footer className="py-12 border-t border-border">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-3 gap-8 text-center mb-8">
-            <div>
-              <div className="text-2xl font-bold font-mono">195+</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mt-1">
-                Países cobertos
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold font-mono">1,2B+</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mt-1">
-                Pessoas no índice
-              </div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold font-mono">100%</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mt-1">
-                Dados verificados
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-between items-center text-xs font-mono text-muted-foreground border-t border-border pt-8">
-            <span>© 2026 POPNAME. O índice da civilização.</span>
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-foreground transition-colors uppercase">Sobre</a>
-              <a href="#" className="hover:text-foreground transition-colors uppercase">API</a>
-              <a href="#" className="hover:text-foreground transition-colors uppercase">Privacidade</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
