@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { ilike, asc, sql } from "drizzle-orm";
-import { db, namesTable, pool } from "@workspace/db";
+import { ilike, sql } from "drizzle-orm";
+import { db, namesTable, nameMeaningsTable, pool } from "@workspace/db";
 import {
   SearchNamesQueryParams,
   GetPopularNamesQueryParams,
@@ -15,27 +15,25 @@ import {
 
 const router: IRouter = Router();
 
-const COUNTRY_COUNT_SUBQUERY = `
-  (SELECT name_id, COUNT(DISTINCT birth_country)::int AS country_count
-   FROM name_regions
-   WHERE birth_country IS NOT NULL
-   GROUP BY name_id) rc
-`;
-
 // GET /names/search
 router.get("/names/search", async (req, res): Promise<void> => {
   const parsed = SearchNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { q, limit = 10 } = parsed.data;
   const { rows } = await pool.query(
-    `SELECT n.name, n.language_origin, n.cultural_origin, n.meaning, n.gender_association,
-            COALESCE(nr.total_claims, 0)::int AS total_claims,
-            COALESCE(rc.country_count, 0) AS country_count
-     FROM names n
-     LEFT JOIN name_ranking nr ON nr.name_id = n.id
-     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = n.id
-     WHERE n.name ILIKE $1
-     ORDER BY n.name
+    `SELECT
+       nr.name,
+       nr.total_claims,
+       nm.meaning,
+       nm.language_origin,
+       nm.cultural_origin,
+       nm.gender_association,
+       COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
+     FROM name_ranking nr
+     LEFT JOIN name_meanings nm ON nm.name_text = nr.name
+     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(nr.name) AND n.status = 'verified'
+     WHERE nr.name ILIKE $1
+     GROUP BY nr.name, nr.total_claims, nm.meaning, nm.language_origin, nm.cultural_origin, nm.gender_association
      LIMIT $2`,
     [`%${q}%`, limit]
   );
@@ -49,19 +47,26 @@ router.get("/names/search", async (req, res): Promise<void> => {
   })));
 });
 
-// GET /names/popular — from name_ranking view
+// GET /names/popular
 router.get("/names/popular", async (req, res): Promise<void> => {
   const parsed = GetPopularNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { limit = 20 } = parsed.data;
   const { rows } = await pool.query(
-    `SELECT nr.name_id, nr.name, nr.total_claims,
-            n.language_origin, n.cultural_origin, n.meaning, n.gender_association,
-            COALESCE(rc.country_count, 0) AS country_count
+    `SELECT
+       nr.name,
+       nr.total_claims,
+       nm.meaning,
+       nm.language_origin,
+       nm.cultural_origin,
+       nm.gender_association,
+       COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
      FROM name_ranking nr
-     JOIN names n ON n.id = nr.name_id
-     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = nr.name_id
-     ORDER BY nr.rank LIMIT $1`,
+     LEFT JOIN name_meanings nm ON nm.name_text = nr.name
+     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(nr.name) AND n.status = 'verified'
+     GROUP BY nr.name, nr.total_claims, nr.rank, nm.meaning, nm.language_origin, nm.cultural_origin, nm.gender_association
+     ORDER BY nr.rank
+     LIMIT $1`,
     [limit]
   );
   res.json(rows.map((r: any) => ({
@@ -81,7 +86,7 @@ const PERIOD_TO_INTERVAL: Record<string, string> = {
   "5y": "1825 days",
 };
 
-// GET /names/trending — dynamic period comparison
+// GET /names/trending
 router.get("/names/trending", async (req, res): Promise<void> => {
   const parsed = GetTrendingNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
@@ -90,50 +95,49 @@ router.get("/names/trending", async (req, res): Promise<void> => {
 
   const { rows } = await pool.query(
     `WITH current_period AS (
-       SELECT name_id, COUNT(*)::bigint AS current_count
-       FROM name_claims
-       WHERE status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '${interval}'
-       GROUP BY name_id
+       SELECT name_text, COUNT(*)::bigint AS current_count
+       FROM names
+       WHERE status = 'verified' AND verified_at >= NOW() - INTERVAL '${interval}'
+       GROUP BY name_text
      ), previous_period AS (
-       SELECT name_id, COUNT(*)::bigint AS previous_count
-       FROM name_claims
+       SELECT name_text, COUNT(*)::bigint AS previous_count
+       FROM names
        WHERE status = 'verified'
          AND verified_at >= NOW() - INTERVAL '${interval}' * 2
          AND verified_at <  NOW() - INTERVAL '${interval}'
-       GROUP BY name_id
+       GROUP BY name_text
      )
-     SELECT n.id AS name_id, n.name,
-            COALESCE(cp.current_count, 0) AS current_count,
-            COALESCE(pp.previous_count, 0) AS previous_count,
-            COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0) AS absolute_growth,
-            CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN 100
-                 ELSE ROUND(
-                   (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
-                   / COALESCE(pp.previous_count, 1)::numeric * 100, 2
-                 )
-            END AS growth_percent,
-            COALESCE(rc.country_count, 0) AS country_count
-     FROM names n
-     JOIN current_period cp ON cp.name_id = n.id
-     LEFT JOIN previous_period pp ON pp.name_id = n.id
-     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = n.id
+     SELECT
+       cp.name_text AS name,
+       COALESCE(cp.current_count, 0) AS current_count,
+       COALESCE(pp.previous_count, 0) AS previous_count,
+       COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0) AS absolute_growth,
+       CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN 100
+            ELSE ROUND(
+              (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
+              / COALESCE(pp.previous_count, 1)::numeric * 100, 2
+            )
+       END AS growth_percent,
+       COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
+     FROM current_period cp
+     LEFT JOIN previous_period pp ON pp.name_text = cp.name_text
+     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(cp.name_text) AND n.status = 'verified'
      WHERE COALESCE(cp.current_count, 0) > COALESCE(pp.previous_count, 0)
+     GROUP BY cp.name_text, cp.current_count, pp.previous_count
      ORDER BY absolute_growth DESC
      LIMIT $1`,
     [limit]
   );
 
-  const sparkInterval = interval;
   const result = await Promise.all(rows.map(async (r: any) => {
     const { rows: spark } = await pool.query(
       `SELECT COUNT(*)::int AS cnt
-       FROM name_claims
-       WHERE name_id = $1 AND status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '${sparkInterval}'
+       FROM names
+       WHERE LOWER(name_text) = LOWER($1) AND status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '${interval}'
        GROUP BY DATE_TRUNC('month', verified_at)
        ORDER BY DATE_TRUNC('month', verified_at)`,
-      [r.name_id]
+      [r.name]
     );
     return {
       name: r.name,
@@ -147,7 +151,7 @@ router.get("/names/trending", async (req, res): Promise<void> => {
   res.json(result);
 });
 
-// GET /names/declining — dynamic period comparison
+// GET /names/declining
 router.get("/names/declining", async (req, res): Promise<void> => {
   const parsed = GetDecliningNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
@@ -156,50 +160,49 @@ router.get("/names/declining", async (req, res): Promise<void> => {
 
   const { rows } = await pool.query(
     `WITH current_period AS (
-       SELECT name_id, COUNT(*)::bigint AS current_count
-       FROM name_claims
-       WHERE status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '${interval}'
-       GROUP BY name_id
+       SELECT name_text, COUNT(*)::bigint AS current_count
+       FROM names
+       WHERE status = 'verified' AND verified_at >= NOW() - INTERVAL '${interval}'
+       GROUP BY name_text
      ), previous_period AS (
-       SELECT name_id, COUNT(*)::bigint AS previous_count
-       FROM name_claims
+       SELECT name_text, COUNT(*)::bigint AS previous_count
+       FROM names
        WHERE status = 'verified'
          AND verified_at >= NOW() - INTERVAL '${interval}' * 2
          AND verified_at <  NOW() - INTERVAL '${interval}'
-       GROUP BY name_id
+       GROUP BY name_text
      )
-     SELECT n.id AS name_id, n.name,
-            COALESCE(cp.current_count, 0) AS current_count,
-            COALESCE(pp.previous_count, 0) AS previous_count,
-            COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0) AS absolute_change,
-            CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN NULL
-                 ELSE ROUND(
-                   (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
-                   / COALESCE(pp.previous_count, 1)::numeric * 100, 2
-                 )
-            END AS decline_percent,
-            COALESCE(rc.country_count, 0) AS country_count
-     FROM names n
-     JOIN previous_period pp ON pp.name_id = n.id
-     LEFT JOIN current_period cp ON cp.name_id = n.id
-     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = n.id
+     SELECT
+       pp.name_text AS name,
+       COALESCE(cp.current_count, 0) AS current_count,
+       COALESCE(pp.previous_count, 0) AS previous_count,
+       COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0) AS absolute_change,
+       CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN NULL
+            ELSE ROUND(
+              (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
+              / COALESCE(pp.previous_count, 1)::numeric * 100, 2
+            )
+       END AS decline_percent,
+       COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
+     FROM previous_period pp
+     LEFT JOIN current_period cp ON cp.name_text = pp.name_text
+     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(pp.name_text) AND n.status = 'verified'
      WHERE COALESCE(cp.current_count, 0) < COALESCE(pp.previous_count, 0)
+     GROUP BY pp.name_text, cp.current_count, pp.previous_count
      ORDER BY absolute_change ASC
      LIMIT $1`,
     [limit]
   );
 
-  const sparkInterval = interval;
   const result = await Promise.all(rows.map(async (r: any) => {
     const { rows: spark } = await pool.query(
       `SELECT COUNT(*)::int AS cnt
-       FROM name_claims
-       WHERE name_id = $1 AND status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '${sparkInterval}'
+       FROM names
+       WHERE LOWER(name_text) = LOWER($1) AND status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '${interval}'
        GROUP BY DATE_TRUNC('month', verified_at)
        ORDER BY DATE_TRUNC('month', verified_at)`,
-      [r.name_id]
+      [r.name]
     );
     return {
       name: r.name,
@@ -234,12 +237,19 @@ router.get("/names/browse", async (req, res): Promise<void> => {
   const total = totalRows[0]?.cnt ?? 0;
 
   const { rows } = await pool.query(
-    `SELECT nr.name_id, nr.name, nr.total_claims, nr.rank,
-            n.language_origin, n.cultural_origin, n.meaning, n.gender_association,
-            COALESCE(rc.country_count, 0) AS country_count
+    `SELECT
+       nr.name,
+       nr.total_claims,
+       nr.rank,
+       nm.meaning,
+       nm.language_origin,
+       nm.cultural_origin,
+       nm.gender_association,
+       COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
      FROM name_ranking nr
-     JOIN names n ON n.id = nr.name_id
-     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = nr.name_id
+     LEFT JOIN name_meanings nm ON nm.name_text = nr.name
+     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(nr.name) AND n.status = 'verified'
+     GROUP BY nr.name, nr.total_claims, nr.rank, nm.meaning, nm.language_origin, nm.cultural_origin, nm.gender_association
      ORDER BY ${orderExpr}
      LIMIT $1 OFFSET $2`,
     [limit, offset]
@@ -260,20 +270,27 @@ router.get("/names/browse", async (req, res): Promise<void> => {
   });
 });
 
-// GET /names/rare — from name_rarity view
+// GET /names/rare
 router.get("/names/rare", async (req, res): Promise<void> => {
   const parsed = GetRareNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { limit = 10 } = parsed.data;
   const { rows } = await pool.query(
-    `SELECT nr.name_id, nr.name, nr.total_claims,
-            n.language_origin, n.cultural_origin, n.meaning, n.gender_association,
-            COALESCE(rc.country_count, 0) AS country_count
+    `SELECT
+       nr.name,
+       nr.total_claims,
+       nm.meaning,
+       nm.language_origin,
+       nm.cultural_origin,
+       nm.gender_association,
+       COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
      FROM name_rarity nr
-     JOIN names n ON n.id = nr.name_id
-     LEFT JOIN ${COUNTRY_COUNT_SUBQUERY} ON rc.name_id = nr.name_id
+     LEFT JOIN name_meanings nm ON nm.name_text = nr.name
+     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(nr.name) AND n.status = 'verified'
      WHERE nr.total_claims > 0
-     ORDER BY nr.rarity_rank LIMIT $1`,
+     GROUP BY nr.name, nr.total_claims, nr.rarity_rank, nm.meaning, nm.language_origin, nm.cultural_origin, nm.gender_association
+     ORDER BY nr.rarity_rank
+     LIMIT $1`,
     [limit]
   );
   res.json(rows.map((r: any) => ({
@@ -286,46 +303,19 @@ router.get("/names/rare", async (req, res): Promise<void> => {
   })));
 });
 
-// GET /names/by-decade — from name_by_generation view
+// GET /names/by-decade
 router.get("/names/by-decade", async (_req, res): Promise<void> => {
   const { rows } = await pool.query(
-    `SELECT birth_decade, name FROM name_by_generation ORDER BY birth_decade`
+    `SELECT name, birth_decade FROM name_by_generation ORDER BY birth_decade, total DESC`
   );
 
   if (!rows.length) {
-    const { rows: fallbackRows } = await pool.query(
-      `SELECT birth_decade::int,
-              array_agg(name ORDER BY total DESC) AS names
-       FROM (
-         SELECT EXTRACT(decade FROM CURRENT_DATE)::int * 10 - (s.n * 10) AS birth_decade,
-                n.name,
-                nr.total_claims AS total
-         FROM generate_series(0,5) AS s(n)
-         CROSS JOIN LATERAL (
-           SELECT n.name, nr.total_claims
-           FROM name_ranking nr
-           JOIN names n ON n.id = nr.name_id
-           ORDER BY nr.rank
-           LIMIT 5
-         ) sub(name, total)
-         JOIN names n2 ON n.name = n2.name
-         JOIN name_ranking nr ON nr.name_id = n2.id
-       ) sq
-       GROUP BY birth_decade
-       ORDER BY birth_decade`
+    const { rows: topRows } = await pool.query(
+      `SELECT name FROM name_ranking ORDER BY rank LIMIT 5`
     );
-
-    if (!fallbackRows.length) {
-      const { rows: topNames } = await pool.query(
-        `SELECT n.name FROM name_ranking nr JOIN names n ON n.id = nr.name_id ORDER BY nr.rank LIMIT 5`
-      );
-      const names = topNames.map((r: any) => r.name);
-      const baseDecade = Math.floor(new Date().getFullYear() / 10) * 10;
-      res.json([0,1,2,3,4,5].map(i => ({ decade: baseDecade - (5-i)*10, names })));
-      return;
-    }
-
-    res.json(fallbackRows.map((r: any) => ({ decade: Number(r.birth_decade), names: r.names })));
+    const names = topRows.map((r: any) => r.name);
+    const base = Math.floor(new Date().getFullYear() / 10) * 10;
+    res.json([0,1,2,3,4,5].map(i => ({ decade: base - (5-i)*10, names })));
     return;
   }
 
@@ -335,13 +325,10 @@ router.get("/names/by-decade", async (_req, res): Promise<void> => {
     if (!decadeMap.has(d)) decadeMap.set(d, []);
     decadeMap.get(d)!.push(r.name);
   }
-
-  res.json(
-    Array.from(decadeMap.entries()).map(([decade, names]) => ({ decade, names }))
-  );
+  res.json(Array.from(decadeMap.entries()).map(([decade, names]) => ({ decade, names })));
 });
 
-// GET /names/:name/history — from name_popularity view
+// GET /names/:name/history
 router.get("/names/:name/history", async (req, res): Promise<void> => {
   const params = GetNameHistoryParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
@@ -354,7 +341,7 @@ router.get("/names/:name/history", async (req, res): Promise<void> => {
   res.json(rows.map((h: any) => ({ year: h.year, count: h.count, rank: null })));
 });
 
-// GET /names/:name/countries — from name_regions view
+// GET /names/:name/countries
 router.get("/names/:name/countries", async (req, res): Promise<void> => {
   const params = GetNameCountriesParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
@@ -365,9 +352,9 @@ router.get("/names/:name/countries", async (req, res): Promise<void> => {
   );
   const grandTotal = Number(totalRow[0]?.grand_total ?? 0);
   const { rows } = await pool.query(
-    `SELECT birth_country, SUM(total)::int AS total FROM name_regions
+    `SELECT birth_country, total FROM name_regions
      WHERE LOWER(name) = LOWER($1) AND birth_country IS NOT NULL
-     GROUP BY birth_country ORDER BY SUM(total) DESC LIMIT 10`,
+     ORDER BY total DESC LIMIT 10`,
     [nameParam]
   );
   res.json(rows.map((c: any) => ({
@@ -378,51 +365,54 @@ router.get("/names/:name/countries", async (req, res): Promise<void> => {
   })));
 });
 
-// GET /names/:name — name detail with ranking + regions
+// GET /names/:name
 router.get("/names/:name", async (req, res): Promise<void> => {
   const params = GetNameDetailParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const nameParam = Array.isArray(params.data.name) ? params.data.name[0] : params.data.name;
 
-  const [nameRow] = await db
-    .select()
-    .from(namesTable)
-    .where(ilike(namesTable.name, nameParam))
-    .limit(1);
-
-  if (!nameRow) { res.status(404).json({ error: "Name not found" }); return; }
-
-  const [{ rows: rankRows }, { rows: regionRows }, { rows: sparkRows }] = await Promise.all([
+  const [{ rows: rankRows }, { rows: meaningRows }, { rows: regionRows }, { rows: sparkRows }] = await Promise.all([
     pool.query(
-      `SELECT total_claims, rank FROM name_ranking WHERE name_id = $1`,
-      [nameRow.id]
+      `SELECT total_claims, rank FROM name_ranking WHERE LOWER(name) = LOWER($1)`,
+      [nameParam]
     ),
     pool.query(
-      `SELECT birth_country, SUM(total)::int AS total
-       FROM name_regions WHERE name_id = $1 AND birth_country IS NOT NULL
-       GROUP BY birth_country ORDER BY SUM(total) DESC LIMIT 5`,
-      [nameRow.id]
+      `SELECT meaning, language_origin, cultural_origin, gender_association
+       FROM name_meanings WHERE LOWER(name_text) = LOWER($1)`,
+      [nameParam]
+    ),
+    pool.query(
+      `SELECT birth_country, total FROM name_regions
+       WHERE LOWER(name) = LOWER($1) AND birth_country IS NOT NULL
+       ORDER BY total DESC LIMIT 5`,
+      [nameParam]
     ),
     pool.query(
       `SELECT COUNT(*)::int AS cnt
-       FROM name_claims
-       WHERE name_id = $1 AND status = 'verified'
+       FROM names
+       WHERE LOWER(name_text) = LOWER($1) AND status = 'verified'
          AND verified_at >= NOW() - INTERVAL '10 months'
        GROUP BY DATE_TRUNC('month', verified_at)
        ORDER BY DATE_TRUNC('month', verified_at)`,
-      [nameRow.id]
+      [nameParam]
     ),
   ]);
 
+  if (!rankRows.length && !meaningRows.length) {
+    res.status(404).json({ error: "Name not found" });
+    return;
+  }
+
   const totalClaims = Number(rankRows[0]?.total_claims ?? 0);
+  const meaning = meaningRows[0];
 
   res.json({
-    name: nameRow.name,
+    name: nameParam,
     count: totalClaims,
     countries: regionRows.length,
-    origin: nameRow.languageOrigin ?? nameRow.culturalOrigin ?? "Unknown",
-    meaning: nameRow.meaning ?? "Unknown",
-    gender: nameRow.genderAssociation ?? "neutral",
+    origin: meaning?.language_origin ?? meaning?.cultural_origin ?? "Unknown",
+    meaning: meaning?.meaning ?? "Unknown",
+    gender: meaning?.gender_association ?? "neutral",
     topCountries: regionRows.map((c: any) => ({
       country: c.birth_country,
       countryCode: "",

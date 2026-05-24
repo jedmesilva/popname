@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, namesTable } from "@workspace/db";
-import { ilike } from "drizzle-orm";
+import { db, nameMeaningsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { ForgeNameBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -57,8 +57,8 @@ router.post("/forge", async (req, res): Promise<void> => {
     for (const candidate of combined.slice(0, 2)) {
       const [existing] = await db
         .select()
-        .from(namesTable)
-        .where(ilike(namesTable.name, candidate))
+        .from(nameMeaningsTable)
+        .where(eq(nameMeaningsTable.nameText, candidate))
         .limit(1);
       suggestions.push({
         name: candidate,
@@ -75,8 +75,8 @@ router.post("/forge", async (req, res): Promise<void> => {
     const generated = generateName(style, meaning, origin);
     const [existing] = await db
       .select()
-      .from(namesTable)
-      .where(ilike(namesTable.name, generated.name))
+      .from(nameMeaningsTable)
+      .where(eq(nameMeaningsTable.nameText, generated.name))
       .limit(1);
     suggestions.push({
       name: generated.name,
