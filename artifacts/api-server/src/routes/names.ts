@@ -307,41 +307,51 @@ router.get("/names/browse", async (req, res): Promise<void> => {
 
   const nameList = rows.map((r: any) => r.name as string);
 
+  // Determine the sparkline range from the active period filter
+  const currentYear    = new Date().getFullYear();
+  const sparkYearFrom  = yearFrom ?? currentYear - 9;
+  const sparkYearTo    = yearTo   ?? currentYear;
+  const rangeYears     = Math.max(sparkYearTo - sparkYearFrom + 1, 1);
+
+  // Bucket into ~10 points regardless of how wide the range is
+  const bucketSize = Math.max(1, Math.ceil(rangeYears / 10));
+  const numBuckets = Math.ceil(rangeYears / bucketSize);
+
   const { rows: sparkRows } = await pool.query(
     `SELECT
        LOWER(name_text) AS name_lower,
-       EXTRACT(YEAR FROM registration_date)::int AS yr,
+       FLOOR((EXTRACT(YEAR FROM registration_date) - $2) / $3)::int AS bucket,
        COUNT(*)::int AS cnt
      FROM names
      WHERE LOWER(name_text) = ANY($1::text[])
        AND registration_date IS NOT NULL
-       AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
-     GROUP BY name_lower, yr
-     ORDER BY name_lower, yr`,
-    [nameList.map((n: string) => n.toLowerCase())]
+       AND EXTRACT(YEAR FROM registration_date) BETWEEN $2 AND $4
+     GROUP BY name_lower, bucket
+     ORDER BY name_lower, bucket`,
+    [nameList.map((n: string) => n.toLowerCase()), sparkYearFrom, bucketSize, sparkYearTo]
   );
 
-  // Build 10-point sparklines (one per year, zeros for years with no data)
-  const currentYear = new Date().getFullYear();
+  // Build fixed-length sparklines (numBuckets points, zeros for empty buckets)
   const sparkMap = new Map<string, number[]>();
   for (const name of nameList) {
-    sparkMap.set(name.toLowerCase(), Array(10).fill(0));
+    sparkMap.set(name.toLowerCase(), Array(numBuckets).fill(0));
   }
   for (const r of sparkRows) {
-    const key       = r.name_lower as string;
-    const yearIndex = Number(r.yr) - (currentYear - 9);
-    if (yearIndex >= 0 && yearIndex < 10) {
+    const key    = r.name_lower as string;
+    const bucket = Number(r.bucket);
+    if (bucket >= 0 && bucket < numBuckets) {
       const arr = sparkMap.get(key);
-      if (arr) arr[yearIndex] = Number(r.cnt);
+      if (arr) arr[bucket] = Number(r.cnt);
     }
   }
 
-  // Derive changePercent from sparkline so they always agree:
-  // compare sum of first 5 years vs sum of last 5 years
+  // Derive changePercent from the sparkline (first half vs second half)
+  // so the % and the chart always agree
   const trendMap = new Map<string, number | null>();
+  const mid = Math.floor(numBuckets / 2);
   for (const [key, spark] of sparkMap) {
-    const first = spark.slice(0, 5).reduce((a, b) => a + b, 0);
-    const last  = spark.slice(5).reduce((a, b) => a + b, 0);
+    const first = spark.slice(0, mid).reduce((a, b) => a + b, 0);
+    const last  = spark.slice(mid).reduce((a, b) => a + b, 0);
     if (first === 0 && last === 0) { trendMap.set(key, null); continue; }
     if (first === 0) { trendMap.set(key, 100); continue; }
     trendMap.set(key, Math.round(((last - first) / first) * 100));
