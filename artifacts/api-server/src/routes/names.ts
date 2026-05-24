@@ -157,19 +157,43 @@ router.get("/names/trending", async (req, res): Promise<void> => {
 router.get("/names/declining", async (req, res): Promise<void> => {
   const parsed = GetDecliningNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const { limit = 10 } = parsed.data;
+  const { period = "1y", limit = 10 } = parsed.data;
+  const interval = PERIOD_TO_INTERVAL[period] ?? "365 days";
 
   const { rows } = await pool.query(
-    `SELECT
-       nd.name,
-       nd.current_count,
-       nd.previous_count,
-       nd.decline_percent,
+    `WITH current_period AS (
+       SELECT name_text, COUNT(*)::bigint AS current_count
+       FROM names
+       WHERE status = 'verified'
+         AND registration_date IS NOT NULL
+         AND registration_date >= (NOW() - INTERVAL '${interval}')::date
+       GROUP BY name_text
+     ), previous_period AS (
+       SELECT name_text, COUNT(*)::bigint AS previous_count
+       FROM names
+       WHERE status = 'verified'
+         AND registration_date IS NOT NULL
+         AND registration_date >= (NOW() - INTERVAL '${interval}' * 2)::date
+         AND registration_date <  (NOW() - INTERVAL '${interval}')::date
+       GROUP BY name_text
+     )
+     SELECT
+       pp.name_text AS name,
+       COALESCE(cp.current_count, 0) AS current_count,
+       COALESCE(pp.previous_count, 0) AS previous_count,
+       CASE WHEN COALESCE(cp.current_count, 0) = 0 THEN -100
+            ELSE ROUND(
+              (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
+              / COALESCE(pp.previous_count, 1)::numeric * 100, 2
+            )
+       END AS decline_percent,
        COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
-     FROM name_decline nd
-     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(nd.name) AND n.status = 'verified'
-     GROUP BY nd.name, nd.current_count, nd.previous_count, nd.decline_percent
-     ORDER BY nd.decline_percent ASC
+     FROM previous_period pp
+     LEFT JOIN current_period cp ON cp.name_text = pp.name_text
+     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(pp.name_text) AND n.status = 'verified'
+     WHERE COALESCE(cp.current_count, 0) < COALESCE(pp.previous_count, 0)
+     GROUP BY pp.name_text, cp.current_count, pp.previous_count
+     ORDER BY decline_percent ASC
      LIMIT $1`,
     [limit]
   );

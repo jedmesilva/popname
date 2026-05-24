@@ -73,7 +73,7 @@ export const GetTrendingNamesResponseItem = zod.object({
   "name": zod.string(),
   "count": zod.number(),
   "countries": zod.number(),
-  "changePercent": zod.number(),
+  "changePercent": zod.number().nullish(),
   "trend": zod.enum(['rising', 'falling']),
   "sparkline": zod.array(zod.number()).optional()
 })
@@ -95,7 +95,7 @@ export const GetDecliningNamesResponseItem = zod.object({
   "name": zod.string(),
   "count": zod.number(),
   "countries": zod.number(),
-  "changePercent": zod.number(),
+  "changePercent": zod.number().nullish(),
   "trend": zod.enum(['rising', 'falling']),
   "sparkline": zod.array(zod.number()).optional()
 })

@@ -380,7 +380,7 @@ export function Home() {
                   <div key={n.name} className="flex items-center justify-between text-sm font-mono">
                     <span className="text-muted-foreground w-5">{String(i + 1).padStart(2, "0")}</span>
                     <span className="flex-1 ml-3 uppercase">{n.name}</span>
-                    <span className="text-destructive">{n.changePercent}%</span>
+                    <span className="text-destructive">{n.changePercent !== null ? `${n.changePercent}%` : "—"}</span>
                   </div>
                 ))}
               </div>

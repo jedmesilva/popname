@@ -11,7 +11,8 @@ export interface TrendingName {
   name: string;
   count: number;
   countries: number;
-  changePercent: number;
+  /** @nullable */
+  changePercent?: number | null;
   trend: TrendingNameTrend;
   sparkline?: number[];
 }

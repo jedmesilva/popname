@@ -411,7 +411,7 @@ components:
 
     TrendingName:
       type: object
-      required: [name, count, countries, changePercent, trend]
+      required: [name, count, countries, trend]
       properties:
         name:
           type: string
@@ -420,7 +420,7 @@ components:
         countries:
           type: integer
         changePercent:
-          type: number
+          type: ["number", "null"]
         trend:
           type: string
           enum: [rising, falling]
