@@ -67,7 +67,7 @@ function Sparkline({ data, rising, uid }: { data: number[]; rising: boolean; uid
   });
   const poly = pts.join(" ");
   const fill = `0,${H} ${poly} ${W},${H}`;
-  const stroke = rising ? "#22c55e" : "#ef4444";
+  const stroke = rising ? "hsl(210, 100%, 50%)" : "#ef4444";
   const gradId = `sg-${uid}`;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-11" preserveAspectRatio="none" aria-hidden>
@@ -99,7 +99,7 @@ interface NameCardProps {
 function NameCard({ name, count, countries, sort, changePercent, sparkline, cardIndex }: NameCardProps) {
   const rising   = sort === "declining" ? false : sort === "trending" ? true : (changePercent ?? 0) >= 0;
   const showPct  = changePercent != null;
-  const trendCls = rising ? "text-emerald-400" : "text-red-400";
+  const trendCls = rising ? "text-accent" : "text-destructive";
   const TIcon    = rising ? ArrowUpRight : ArrowDownRight;
 
   return (
@@ -403,10 +403,10 @@ export function Explore() {
 
             <div className="flex items-center gap-4 ml-auto flex-wrap">
               <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" /> Em ascensão
+                <ArrowUpRight className="w-3.5 h-3.5 text-accent" /> Em ascensão
               </span>
               <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-                <ArrowDownRight className="w-3.5 h-3.5 text-red-400" /> Em declínio
+                <ArrowDownRight className="w-3.5 h-3.5 text-destructive" /> Em declínio
               </span>
             </div>
           </div>
@@ -483,7 +483,7 @@ export function Explore() {
               : (data?.items as BrowseItem[] ?? []).map((item: BrowseItem, idx: number) => {
                 const cp      = item.changePercent ?? null;
                 const rising  = sort === "declining" ? false : sort === "trending" ? true : (cp ?? 0) >= 0;
-                const trendCls = rising ? "text-emerald-400" : "text-red-400";
+                const trendCls = rising ? "text-accent" : "text-destructive";
                 const TIcon   = rising ? ArrowUpRight : ArrowDownRight;
                 return (
                   <Link key={item.name} href={`/nome/${item.name}`}
