@@ -52,7 +52,7 @@ export function Home() {
     { query: { queryKey: getGetPopularNamesQueryKey({ limit: 6 }) } }
   );
 
-  const { data: namesByCountry, isLoading: loadingByCountry } = useQuery<{ name: string; country: string; count: number }[]>({
+  const { data: namesByCountry, isLoading: loadingByCountry } = useQuery<{ name: string; country: string }[]>({
     queryKey: ["names-by-country"],
     queryFn: () => fetch("/api/names/by-country").then((r) => r.json()),
   });
@@ -319,8 +319,7 @@ export function Home() {
                         >
                           {item.name}
                         </Link>
-                        <span className="text-muted-foreground text-xs">{item.count}×</span>
-                      </div>
+                        </div>
                     );
                   })}
               </div>

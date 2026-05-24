@@ -328,19 +328,21 @@ router.get("/names/by-decade", async (_req, res): Promise<void> => {
   res.json(Array.from(decadeMap.entries()).map(([decade, names]) => ({ decade, names })));
 });
 
-// GET /names/by-country — top names with their countries for the home card
+// GET /names/by-country — top name per country for the home card
 router.get("/names/by-country", async (_req, res): Promise<void> => {
   const { rows } = await pool.query(
-    `SELECT nr.name, nr.birth_country, nr.total
+    `SELECT DISTINCT ON (nr.birth_country)
+       nr.birth_country AS country,
+       nr.name,
+       nr.total
      FROM name_regions nr
      WHERE nr.birth_country IS NOT NULL
-     ORDER BY nr.total DESC
+     ORDER BY nr.birth_country, nr.total DESC
      LIMIT 5`
   );
   res.json(rows.map((r: any) => ({
     name: r.name,
-    country: r.birth_country,
-    count: Number(r.total),
+    country: r.country,
   })));
 });
 
