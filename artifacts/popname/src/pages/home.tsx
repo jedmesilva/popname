@@ -7,6 +7,7 @@ import {
   useGetFeaturedName, getGetFeaturedNameQueryKey,
   useGetNamesByDecade, getGetNamesByDecadeQueryKey,
   useGetRareNames, getGetRareNamesQueryKey,
+  useGetPopularNames, getGetPopularNamesQueryKey,
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
@@ -42,6 +43,11 @@ export function Home() {
   const { data: rare } = useGetRareNames(
     { limit: 5 },
     { query: { queryKey: getGetRareNamesQueryKey({ limit: 5 }) } }
+  );
+
+  const { data: popular } = useGetPopularNames(
+    { limit: 6 },
+    { query: { queryKey: getGetPopularNamesQueryKey({ limit: 6 }) } }
   );
 
   function handleSearch(e: React.FormEvent) {
@@ -130,14 +136,14 @@ export function Home() {
             <span className="text-xs text-muted-foreground font-mono uppercase mr-2 leading-7">
               Populares:
             </span>
-            {["Lucas", "Maria", "Noah", "Aurora", "Helena", "Gael"].map((n) => (
+            {(popular ?? []).map((n) => (
               <Link
-                key={n}
-                href={`/nome/${n}`}
-                data-testid={`chip-name-${n}`}
+                key={n.name}
+                href={`/nome/${n.name}`}
+                data-testid={`chip-name-${n.name}`}
                 className="text-xs font-mono uppercase px-3 py-1 border border-border hover:border-accent hover:text-accent transition-colors"
               >
-                {n} <ArrowUpRight className="inline w-3 h-3" />
+                {n.name} <ArrowUpRight className="inline w-3 h-3" />
               </Link>
             ))}
           </div>
