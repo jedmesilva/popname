@@ -6,8 +6,9 @@ import {
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { ArrowUpRight, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Flags from "country-flag-icons/react/3x2";
+import { CountryPicker, ALL_COUNTRIES } from "@/components/country-picker";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -32,16 +33,6 @@ const GENERATIONS = [
 
 type GenerationKey = typeof GENERATIONS[number]["key"];
 
-const COUNTRIES = [
-  { code: "BR", name: "Brasil" },
-  { code: "US", name: "EUA" },
-  { code: "IN", name: "Índia" },
-  { code: "JP", name: "Japão" },
-  { code: "CN", name: "China" },
-  { code: "FR", name: "França" },
-  { code: "DE", name: "Alemanha" },
-  { code: "RU", name: "Rússia" },
-];
 
 const TABS = ["NAVEGAR", "GERAÇÕES", "LINHA DO TEMPO", "RAROS"] as const;
 type Tab = typeof TABS[number];
@@ -149,30 +140,7 @@ function BrowseTab() {
         <div className="w-px bg-border self-stretch hidden sm:block" />
 
         {/* Country */}
-        <div className="flex flex-wrap gap-1">
-          <button
-            onClick={() => changeCountry(null)}
-            className={`px-3 py-1.5 font-mono text-xs uppercase tracking-widest border transition-colors ${
-              !country ? "border-accent bg-accent text-accent-foreground" : "border-border hover:border-accent/50 text-muted-foreground"
-            }`}
-          >
-            Todos os países
-          </button>
-          {COUNTRIES.map((c) => (
-            <button
-              key={c.code}
-              onClick={() => changeCountry(country === c.code ? null : c.code)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 font-mono text-xs uppercase tracking-widest border transition-colors ${
-                country === c.code
-                  ? "border-accent bg-accent text-accent-foreground"
-                  : "border-border hover:border-accent/50 text-muted-foreground"
-              }`}
-            >
-              <CountryFlag code={c.code} className="w-4 h-auto" />
-              {c.name}
-            </button>
-          ))}
-        </div>
+        <CountryPicker value={country} onChange={(v) => changeCountry(v)} />
 
         {/* Divider */}
         <div className="w-px bg-border self-stretch hidden sm:block" />
@@ -207,7 +175,7 @@ function BrowseTab() {
       {!isLoading && data && (
         <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-6">
           {data.total.toLocaleString("pt-BR")} nomes encontrados
-          {country && ` · ${COUNTRIES.find(c => c.code === country)?.name}`}
+          {country && ` · ${ALL_COUNTRIES.find(c => c.code === country)?.name}`}
           {generation && ` · ${GENERATIONS.find(g => g.key === generation)?.label}`}
         </p>
       )}
