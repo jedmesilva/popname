@@ -32,7 +32,9 @@ export const SearchNamesResponseItem = zod.object({
   "countries": zod.number(),
   "origin": zod.string().nullish(),
   "meaning": zod.string().nullish(),
-  "gender": zod.string().nullish()
+  "gender": zod.string().nullish(),
+  "changePercent": zod.number().nullish(),
+  "sparkline": zod.array(zod.number()).optional()
 })
 export const SearchNamesResponse = zod.array(SearchNamesResponseItem)
 
@@ -53,7 +55,9 @@ export const GetPopularNamesResponseItem = zod.object({
   "countries": zod.number(),
   "origin": zod.string().nullish(),
   "meaning": zod.string().nullish(),
-  "gender": zod.string().nullish()
+  "gender": zod.string().nullish(),
+  "changePercent": zod.number().nullish(),
+  "sparkline": zod.array(zod.number()).optional()
 })
 export const GetPopularNamesResponse = zod.array(GetPopularNamesResponseItem)
 
@@ -124,7 +128,9 @@ export const BrowseNamesResponse = zod.object({
   "countries": zod.number(),
   "origin": zod.string().nullish(),
   "meaning": zod.string().nullish(),
-  "gender": zod.string().nullish()
+  "gender": zod.string().nullish(),
+  "changePercent": zod.number().nullish(),
+  "sparkline": zod.array(zod.number()).optional()
 })),
   "total": zod.number(),
   "page": zod.number(),
@@ -147,7 +153,9 @@ export const GetRareNamesResponseItem = zod.object({
   "countries": zod.number(),
   "origin": zod.string().nullish(),
   "meaning": zod.string().nullish(),
-  "gender": zod.string().nullish()
+  "gender": zod.string().nullish(),
+  "changePercent": zod.number().nullish(),
+  "sparkline": zod.array(zod.number()).optional()
 })
 export const GetRareNamesResponse = zod.array(GetRareNamesResponseItem)
 

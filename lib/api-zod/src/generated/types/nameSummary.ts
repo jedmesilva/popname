@@ -16,4 +16,7 @@ export interface NameSummary {
   meaning?: string | null;
   /** @nullable */
   gender?: string | null;
+  /** @nullable */
+  changePercent?: number | null;
+  sparkline?: number[];
 }

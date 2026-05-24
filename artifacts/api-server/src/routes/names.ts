@@ -251,15 +251,66 @@ router.get("/names/browse", async (req, res): Promise<void> => {
     [limit, offset]
   );
 
+  const nameList = rows.map((r: any) => r.name as string);
+
+  const [{ rows: sparkRows }, { rows: trendRows }] = await Promise.all([
+    pool.query(
+      `SELECT
+         LOWER(name_text) AS name_lower,
+         DATE_TRUNC('month', verified_at) AS month,
+         COUNT(*)::int AS cnt
+       FROM names
+       WHERE LOWER(name_text) = ANY($1::text[])
+         AND status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '10 months'
+       GROUP BY name_lower, month
+       ORDER BY name_lower, month`,
+      [nameList.map((n: string) => n.toLowerCase())]
+    ),
+    pool.query(
+      `SELECT
+         LOWER(name_text) AS name_lower,
+         COUNT(*) FILTER (WHERE verified_at >= NOW() - INTERVAL '1 year')::int AS recent,
+         COUNT(*) FILTER (WHERE verified_at < NOW() - INTERVAL '1 year')::int AS older
+       FROM names
+       WHERE LOWER(name_text) = ANY($1::text[])
+         AND status = 'verified'
+         AND verified_at IS NOT NULL
+       GROUP BY name_lower`,
+      [nameList.map((n: string) => n.toLowerCase())]
+    ),
+  ]);
+
+  const sparkMap = new Map<string, number[]>();
+  for (const r of sparkRows) {
+    const key = r.name_lower as string;
+    if (!sparkMap.has(key)) sparkMap.set(key, []);
+    sparkMap.get(key)!.push(Number(r.cnt));
+  }
+
+  const trendMap = new Map<string, number | null>();
+  for (const r of trendRows) {
+    const recent = Number(r.recent);
+    const older = Number(r.older);
+    if (recent === 0 && older === 0) { trendMap.set(r.name_lower, null); continue; }
+    if (older === 0) { trendMap.set(r.name_lower, 100); continue; }
+    trendMap.set(r.name_lower, Math.round(((recent - older) / older) * 100));
+  }
+
   res.json({
-    items: rows.map((r: any) => ({
-      name: r.name,
-      count: Number(r.total_claims),
-      countries: Number(r.country_count),
-      origin: r.language_origin ?? r.cultural_origin ?? null,
-      meaning: r.meaning ?? null,
-      gender: r.gender_association ?? null,
-    })),
+    items: rows.map((r: any) => {
+      const key = (r.name as string).toLowerCase();
+      return {
+        name: r.name,
+        count: Number(r.total_claims),
+        countries: Number(r.country_count),
+        origin: r.language_origin ?? r.cultural_origin ?? null,
+        meaning: r.meaning ?? null,
+        gender: r.gender_association ?? null,
+        changePercent: trendMap.get(key) ?? null,
+        sparkline: sparkMap.get(key) ?? [],
+      };
+    }),
     total,
     page,
     hasMore: offset + rows.length < total,

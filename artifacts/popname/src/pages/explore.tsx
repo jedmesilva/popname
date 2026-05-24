@@ -18,6 +18,8 @@ interface BrowseItem {
   origin?: string | null;
   meaning?: string | null;
   gender?: string | null;
+  changePercent?: number | null;
+  sparkline?: number[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -50,40 +52,10 @@ const GENERATIONS = [
 ] as const;
 type GenerationKey = typeof GENERATIONS[number]["key"];
 
-// ─── Deterministic sparkline ──────────────────────────────────────────────────
-
-function nameSeed(name: string, period: PeriodValue): number {
-  const key = name + period;
-  let h = 2166136261;
-  for (let i = 0; i < key.length; i++) {
-    h ^= key.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) / 0xffffffff;
-}
-
-function makeSparkData(name: string, period: PeriodValue, rising: boolean, length = 24): number[] {
-  let seed = nameSeed(name, period);
-  const next = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-  const pts: number[] = [];
-  let v = 40 + next() * 20;
-  for (let i = 0; i < length; i++) {
-    v += (next() - (rising ? 0.38 : 0.62)) * 7;
-    v = Math.max(4, Math.min(96, v));
-    pts.push(v);
-  }
-  return pts;
-}
-
-function nameTrend(name: string, period: PeriodValue): number {
-  const s = nameSeed(name, period);
-  return parseFloat(((s * 32) - 16).toFixed(1));
-}
-
 // ─── Sparkline SVG ────────────────────────────────────────────────────────────
 
-function Sparkline({ name, period, rising }: { name: string; period: PeriodValue; rising: boolean }) {
-  const data = makeSparkData(name, period, rising);
+function Sparkline({ data, rising, uid }: { data: number[]; rising: boolean; uid: string }) {
+  if (!data || data.length < 2) return <div className="h-11" />;
   const W = 200, H = 44;
   const min = Math.min(...data), max = Math.max(...data);
   const range = max - min || 1;
@@ -95,16 +67,16 @@ function Sparkline({ name, period, rising }: { name: string; period: PeriodValue
   const poly = pts.join(" ");
   const fill = `0,${H} ${poly} ${W},${H}`;
   const stroke = rising ? "#22c55e" : "#ef4444";
-  const uid = `s-${name}-${period}-${rising ? "u" : "d"}`;
+  const gradId = `sg-${uid}`;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-11" preserveAspectRatio="none" aria-hidden>
       <defs>
-        <linearGradient id={uid} x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stopColor={stroke} stopOpacity="0.22" />
           <stop offset="100%" stopColor={stroke} stopOpacity="0"    />
         </linearGradient>
       </defs>
-      <polygon points={fill} fill={`url(#${uid})`} />
+      <polygon points={fill} fill={`url(#${gradId})`} />
       <polyline points={poly} fill="none" stroke={stroke} strokeWidth="1.5"
         strokeLinejoin="round" strokeLinecap="round" />
     </svg>
@@ -118,17 +90,16 @@ interface NameCardProps {
   count: number;
   countries: number;
   sort: SortValue;
-  period: PeriodValue;
+  changePercent?: number | null;
+  sparkline?: number[];
+  cardIndex: number;
 }
 
-function NameCard({ name, count, countries, sort, period }: NameCardProps) {
-  const trend   = nameTrend(name, period);
-  const rising  = sort === "declining" ? false : sort === "trending" ? true : trend >= 0;
-  const showPct = sort === "trending" || sort === "declining";
-  const pos     = rising;
-  const trendCls = pos ? "text-emerald-400" : "text-red-400";
-  const TIcon   = pos ? ArrowUpRight : ArrowDownRight;
-  const periodLabel = PERIOD_OPTIONS.find(p => p.value === period)?.label.toLowerCase() ?? "";
+function NameCard({ name, count, countries, sort, changePercent, sparkline, cardIndex }: NameCardProps) {
+  const rising   = sort === "declining" ? false : sort === "trending" ? true : (changePercent ?? 0) >= 0;
+  const showPct  = changePercent != null;
+  const trendCls = rising ? "text-emerald-400" : "text-red-400";
+  const TIcon    = rising ? ArrowUpRight : ArrowDownRight;
 
   return (
     <Link href={`/nome/${name}`}
@@ -143,10 +114,10 @@ function NameCard({ name, count, countries, sort, period }: NameCardProps) {
           <div className="text-right shrink-0">
             <div className={`flex items-center gap-0.5 justify-end font-bold text-sm ${trendCls}`}>
               <TIcon className="w-3.5 h-3.5" />
-              {pos ? "+" : ""}{Math.abs(trend).toFixed(1)}%
+              {rising ? "+" : ""}{Math.abs(changePercent!).toFixed(0)}%
             </div>
             <div className="font-mono text-[9px] text-muted-foreground whitespace-nowrap mt-0.5">
-              {periodLabel}
+              último ano
             </div>
           </div>
         )}
@@ -166,7 +137,7 @@ function NameCard({ name, count, countries, sort, period }: NameCardProps) {
       </div>
 
       <div className="-mx-0.5 mt-auto">
-        <Sparkline name={name} period={period} rising={rising} />
+        <Sparkline data={sparkline ?? []} rising={rising} uid={`card-${cardIndex}`} />
       </div>
     </Link>
   );
@@ -419,14 +390,16 @@ export function Explore() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-4">
             {isLoading
               ? Array(20).fill(0).map((_, i) => <Skeleton key={i} className="h-44" />)
-              : (data?.items as BrowseItem[] ?? []).map((item) => (
+              : (data?.items as BrowseItem[] ?? []).map((item, idx) => (
                 <NameCard
                   key={item.name}
                   name={item.name}
                   count={item.count}
                   countries={item.countries}
                   sort={sort}
-                  period={period}
+                  changePercent={item.changePercent}
+                  sparkline={item.sparkline}
+                  cardIndex={idx}
                 />
               ))
             }
@@ -442,21 +415,20 @@ export function Explore() {
             {isLoading
               ? Array(30).fill(0).map((_, i) => <Skeleton key={i} className="h-12 mx-4 my-2" />)
               : (data?.items as BrowseItem[] ?? []).map((item: BrowseItem, idx: number) => {
-                const trend   = nameTrend(item.name, period);
-                const rising  = sort === "declining" ? false : sort === "trending" ? true : trend >= 0;
-                const pos     = rising;
-                const trendCls = pos ? "text-emerald-400" : "text-red-400";
-                const TIcon   = pos ? ArrowUpRight : ArrowDownRight;
+                const cp      = item.changePercent ?? null;
+                const rising  = sort === "declining" ? false : sort === "trending" ? true : (cp ?? 0) >= 0;
+                const trendCls = rising ? "text-emerald-400" : "text-red-400";
+                const TIcon   = rising ? ArrowUpRight : ArrowDownRight;
                 return (
                   <Link key={item.name} href={`/nome/${item.name}`}
                     className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors group">
                     <span className="text-base font-bold uppercase tracking-tight w-36 shrink-0 group-hover:text-accent transition-colors truncate">
                       {item.name}
                     </span>
-                    {isTrend && (
+                    {cp != null && (
                       <span className={`flex items-center gap-0.5 font-bold text-sm ${trendCls} w-20 shrink-0`}>
                         <TIcon className="w-3.5 h-3.5" />
-                        {pos ? "+" : ""}{Math.abs(trend).toFixed(1)}%
+                        {rising ? "+" : ""}{Math.abs(cp).toFixed(0)}%
                       </span>
                     )}
                     <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground w-36 shrink-0">
@@ -470,7 +442,7 @@ export function Explore() {
                       {item.countries} {item.countries === 1 ? "país" : "países"}
                     </span>
                     <div className="flex-1 min-w-0 hidden sm:block">
-                      <Sparkline name={item.name} period={period} rising={rising} />
+                      <Sparkline data={item.sparkline ?? []} rising={rising} uid={`list-${idx}`} />
                     </div>
                   </Link>
                 );

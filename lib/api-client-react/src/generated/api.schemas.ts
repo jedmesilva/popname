@@ -23,6 +23,9 @@ export interface NameSummary {
   meaning?: string | null;
   /** @nullable */
   gender?: string | null;
+  /** @nullable */
+  changePercent?: number | null;
+  sparkline?: number[];
 }
 
 export type TrendingNameTrend = typeof TrendingNameTrend[keyof typeof TrendingNameTrend];

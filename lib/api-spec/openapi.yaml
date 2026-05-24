@@ -408,6 +408,12 @@ components:
           type: ["string", "null"]
         gender:
           type: ["string", "null"]
+        changePercent:
+          type: ["number", "null"]
+        sparkline:
+          type: array
+          items:
+            type: number
 
     TrendingName:
       type: object
