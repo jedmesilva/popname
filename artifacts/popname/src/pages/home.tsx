@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import {
   useGetIndexStats, getGetIndexStatsQueryKey,
   useGetTrendingNames, getGetTrendingNamesQueryKey,
@@ -49,6 +50,11 @@ export function Home() {
     { limit: 6 },
     { query: { queryKey: getGetPopularNamesQueryKey({ limit: 6 }) } }
   );
+
+  const { data: namesByCountry, isLoading: loadingByCountry } = useQuery<{ name: string; country: string; count: number }[]>({
+    queryKey: ["names-by-country"],
+    queryFn: () => fetch("/api/names/by-country").then((r) => r.json()),
+  });
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -295,16 +301,27 @@ export function Home() {
               <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
                 Nomes por país
               </p>
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-5xl opacity-20">🌐</div>
+              <div className="space-y-2 flex-1">
+                {loadingByCountry
+                  ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-5 w-full" />)
+                  : (Array.isArray(namesByCountry) ? namesByCountry : []).map((item) => (
+                    <div key={`${item.name}-${item.country}`} className="flex items-center gap-2 font-mono text-sm">
+                      <span className="text-muted-foreground w-6 text-xs">{item.country}</span>
+                      <span className="w-px h-3 bg-border" />
+                      <Link
+                        href={`/nome/${item.name}`}
+                        className="uppercase hover:text-accent transition-colors flex-1"
+                      >
+                        {item.name}
+                      </Link>
+                      <span className="text-muted-foreground text-xs">{item.count}×</span>
+                    </div>
+                  ))}
               </div>
-              <p className="text-sm text-muted-foreground font-mono mb-4">
-                Explore os nomes mais comuns em cada país do mundo.
-              </p>
               <Link
                 href="/paises"
                 data-testid="link-explore-countries"
-                className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
+                className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
                 Explorar países <ArrowUpRight className="w-3 h-3" />
               </Link>

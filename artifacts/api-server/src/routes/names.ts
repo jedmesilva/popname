@@ -328,7 +328,22 @@ router.get("/names/by-decade", async (_req, res): Promise<void> => {
   res.json(Array.from(decadeMap.entries()).map(([decade, names]) => ({ decade, names })));
 });
 
-// GET /names/:name/history
+// GET /names/by-country — top names with their countries for the home card
+router.get("/names/by-country", async (_req, res): Promise<void> => {
+  const { rows } = await pool.query(
+    `SELECT nr.name, nr.birth_country, nr.total
+     FROM name_regions nr
+     WHERE nr.birth_country IS NOT NULL
+     ORDER BY nr.total DESC
+     LIMIT 5`
+  );
+  res.json(rows.map((r: any) => ({
+    name: r.name,
+    country: r.birth_country,
+    count: Number(r.total),
+  })));
+});
+
 router.get("/names/:name/history", async (req, res): Promise<void> => {
   const params = GetNameHistoryParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
