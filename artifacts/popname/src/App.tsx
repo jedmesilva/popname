@@ -12,6 +12,7 @@ import { NameDetail } from "@/pages/name-detail";
 import { Explore } from "@/pages/explore";
 import { Trends } from "@/pages/trends";
 import { Claim } from "@/pages/claim";
+import { SearchResults } from "@/pages/search";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/explorar" component={Explore} />
         <Route path="/tendencias" component={Trends} />
         <Route path="/reivindicar" component={Claim} />
+        <Route path="/buscar" component={SearchResults} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
