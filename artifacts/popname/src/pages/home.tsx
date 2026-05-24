@@ -17,6 +17,14 @@ import { Link } from "wouter";
 import { ArrowUpRight, TrendingUp, Search } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 
+function fmtPct(v: number): string {
+  const abs = Math.abs(v);
+  if (abs === 0) return "0%";
+  if (abs < 0.1) return "<0.1%";
+  if (abs < 1)   return abs.toFixed(1) + "%";
+  return Math.round(abs) + "%";
+}
+
 const COUNTRY_NAMES: Record<string, string> = {
   AR: "Argentina", AU: "Austrália", BR: "Brasil", CA: "Canadá",
   CL: "Chile", CN: "China", CO: "Colômbia", DE: "Alemanha",
@@ -380,7 +388,7 @@ export function Home() {
                   <div key={n.name} className="flex items-center justify-between text-sm font-mono">
                     <span className="text-muted-foreground w-5">{String(i + 1).padStart(2, "0")}</span>
                     <span className="flex-1 ml-3 uppercase">{n.name}</span>
-                    <span className="text-destructive">{n.changePercent !== null ? `${n.changePercent}%` : "—"}</span>
+                    <span className="text-destructive">{n.changePercent !== null ? `-${fmtPct(n.changePercent)}` : "—"}</span>
                   </div>
                 ))}
               </div>
@@ -464,7 +472,7 @@ function TrendRowSmall({
           rising ? "text-accent" : "text-destructive"
         }`}
       >
-        {change === null ? "—" : `${change > 0 ? "+" : ""}${change}%`}
+        {change === null ? "—" : `${change >= 0 ? "+" : "-"}${fmtPct(change)}`}
       </span>
     </Link>
   );

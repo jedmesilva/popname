@@ -191,17 +191,27 @@ router.get("/names/trending", async (req, res): Promise<void> => {
     [limit]
   );
 
-  const nameList   = rows.map((r: any) => r.name as string);
-  const sparkMap   = await fetchHistorySparklines(nameList);
+  const nameList = rows.map((r: any) => r.name as string);
+  const sparkMap = await fetchHistorySparklines(nameList);
 
-  res.json(rows.map((r: any) => ({
-    name: r.name,
-    count: Number(r.current_count),
-    countries: Number(r.country_count),
-    changePercent: r.growth_percent !== null ? Number(r.growth_percent) : null,
-    trend: "rising" as const,
-    sparkline: sparkMap.get((r.name as string).toLowerCase()) ?? [],
-  })));
+  res.json(rows.map((r: any) => {
+    const spark = sparkMap.get((r.name as string).toLowerCase()) ?? [];
+    const first = spark[0] ?? 0;
+    const last  = spark[spark.length - 1] ?? 0;
+    const changePercent = spark.length < 2
+      ? (spark.length === 1 && spark[0] > 0 ? 100 : null)
+      : first === 0
+        ? (last > 0 ? 100 : null)
+        : parseFloat(((last - first) / first * 100).toFixed(2));
+    return {
+      name: r.name,
+      count: Number(r.current_count),
+      countries: Number(r.country_count),
+      changePercent,
+      trend: "rising" as const,
+      sparkline: spark,
+    };
+  }));
 });
 
 // GET /names/declining
@@ -252,14 +262,24 @@ router.get("/names/declining", async (req, res): Promise<void> => {
   const nameList = rows.map((r: any) => r.name as string);
   const sparkMap = await fetchHistorySparklines(nameList);
 
-  res.json(rows.map((r: any) => ({
-    name: r.name,
-    count: Number(r.current_count),
-    countries: Number(r.country_count),
-    changePercent: r.decline_percent !== null ? Number(r.decline_percent) : null,
-    trend: "falling" as const,
-    sparkline: sparkMap.get((r.name as string).toLowerCase()) ?? [],
-  })));
+  res.json(rows.map((r: any) => {
+    const spark = sparkMap.get((r.name as string).toLowerCase()) ?? [];
+    const first = spark[0] ?? 0;
+    const last  = spark[spark.length - 1] ?? 0;
+    const changePercent = spark.length < 2
+      ? (spark.length === 1 && spark[0] > 0 ? -100 : null)
+      : first === 0
+        ? (last > 0 ? 100 : null)
+        : parseFloat(((last - first) / first * 100).toFixed(2));
+    return {
+      name: r.name,
+      count: Number(r.current_count),
+      countries: Number(r.country_count),
+      changePercent,
+      trend: "falling" as const,
+      sparkline: spark,
+    };
+  }));
 });
 
 // GET /names/browse
