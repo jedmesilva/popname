@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { ilike, desc, asc, sql } from "drizzle-orm";
-import { db, namesTable, nameClaimsTable } from "@workspace/db";
+import { ilike, asc, sql } from "drizzle-orm";
+import { db, namesTable, nameClaimsTable, peopleTable, pool } from "@workspace/db";
 import {
   SearchNamesQueryParams,
   GetPopularNamesQueryParams,
@@ -15,23 +15,10 @@ import {
 
 const router: IRouter = Router();
 
-function formatName(n: typeof namesTable.$inferSelect, claimCount = 0) {
-  return {
-    name: n.name,
-    count: claimCount,
-    countries: 0,
-    origin: n.languageOrigin ?? n.culturalOrigin ?? null,
-    meaning: n.meaning ?? null,
-    gender: n.genderAssociation ?? null,
-  };
-}
-
+// GET /names/search
 router.get("/names/search", async (req, res): Promise<void> => {
   const parsed = SearchNamesQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { q, limit = 10 } = parsed.data;
   const results = await db
     .select()
@@ -39,273 +26,288 @@ router.get("/names/search", async (req, res): Promise<void> => {
     .where(ilike(namesTable.name, `%${q}%`))
     .orderBy(asc(namesTable.name))
     .limit(limit);
-  res.json(results.map((n) => formatName(n)));
-});
-
-router.get("/names/popular", async (req, res): Promise<void> => {
-  const parsed = GetPopularNamesQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const { limit = 20 } = parsed.data;
-  const results = await db
-    .select({
-      id: namesTable.id,
-      name: namesTable.name,
-      languageOrigin: namesTable.languageOrigin,
-      culturalOrigin: namesTable.culturalOrigin,
-      meaning: namesTable.meaning,
-      variations: namesTable.variations,
-      genderAssociation: namesTable.genderAssociation,
-      createdAt: namesTable.createdAt,
-      updatedAt: namesTable.updatedAt,
-      claimCount: sql<number>`count(${nameClaimsTable.id})::int`,
-    })
-    .from(namesTable)
-    .leftJoin(nameClaimsTable, sql`${nameClaimsTable.nameId} = ${namesTable.id} AND ${nameClaimsTable.status} = 'verified'`)
-    .groupBy(namesTable.id)
-    .orderBy(desc(sql`count(${nameClaimsTable.id})`))
-    .limit(limit);
-  res.json(results.map((n) => formatName(n, n.claimCount)));
-});
-
-router.get("/names/trending", async (req, res): Promise<void> => {
-  const parsed = GetTrendingNamesQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const { limit = 10 } = parsed.data;
-  // Trending: names with most claims in the last 30 days
-  const results = await db
-    .select({
-      id: namesTable.id,
-      name: namesTable.name,
-      languageOrigin: namesTable.languageOrigin,
-      culturalOrigin: namesTable.culturalOrigin,
-      meaning: namesTable.meaning,
-      variations: namesTable.variations,
-      genderAssociation: namesTable.genderAssociation,
-      createdAt: namesTable.createdAt,
-      updatedAt: namesTable.updatedAt,
-      claimCount: sql<number>`count(${nameClaimsTable.id})::int`,
-    })
-    .from(namesTable)
-    .leftJoin(nameClaimsTable, sql`${nameClaimsTable.nameId} = ${namesTable.id} AND ${nameClaimsTable.status} = 'verified' AND ${nameClaimsTable.verifiedAt} > NOW() - INTERVAL '30 days'`)
-    .groupBy(namesTable.id)
-    .orderBy(desc(sql`count(${nameClaimsTable.id})`))
-    .limit(limit);
-  res.json(results.map((n) => ({
-    name: n.name,
-    count: n.claimCount,
-    countries: 0,
-    changePercent: 0,
-    trend: "rising" as const,
-    sparkline: [],
-  })));
-});
-
-router.get("/names/declining", async (req, res): Promise<void> => {
-  const parsed = GetDecliningNamesQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-  const { limit = 10 } = parsed.data;
-  // Declining: names with least recent activity but some historical claims
-  const results = await db
-    .select()
-    .from(namesTable)
-    .orderBy(asc(namesTable.updatedAt))
-    .limit(limit);
   res.json(results.map((n) => ({
     name: n.name,
     count: 0,
     countries: 0,
-    changePercent: 0,
-    trend: "falling" as const,
-    sparkline: [],
+    origin: n.languageOrigin ?? n.culturalOrigin ?? null,
+    meaning: n.meaning ?? null,
+    gender: n.genderAssociation ?? null,
   })));
 });
 
+// GET /names/popular — from name_ranking view
+router.get("/names/popular", async (req, res): Promise<void> => {
+  const parsed = GetPopularNamesQueryParams.safeParse(req.query);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const { limit = 20 } = parsed.data;
+  const { rows } = await pool.query(
+    `SELECT nr.name_id, nr.name, nr.total_claims,
+            n.language_origin, n.cultural_origin, n.meaning, n.gender_association
+     FROM name_ranking nr
+     JOIN names n ON n.id = nr.name_id
+     ORDER BY nr.rank LIMIT $1`,
+    [limit]
+  );
+  res.json(rows.map((r: any) => ({
+    name: r.name,
+    count: Number(r.total_claims),
+    countries: 0,
+    origin: r.language_origin ?? r.cultural_origin ?? null,
+    meaning: r.meaning ?? null,
+    gender: r.gender_association ?? null,
+  })));
+});
+
+// GET /names/trending — from name_growth view
+router.get("/names/trending", async (req, res): Promise<void> => {
+  const parsed = GetTrendingNamesQueryParams.safeParse(req.query);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const { limit = 10 } = parsed.data;
+  const { rows } = await pool.query(
+    `SELECT ng.name_id, ng.name, ng.current_count, ng.absolute_growth
+     FROM name_growth ng
+     ORDER BY ng.absolute_growth DESC LIMIT $1`,
+    [limit]
+  );
+  // Sparkline: monthly counts for each trending name (last 10 months)
+  const result = await Promise.all(rows.map(async (r: any) => {
+    const { rows: spark } = await pool.query(
+      `SELECT COUNT(*)::int AS cnt
+       FROM name_claims
+       WHERE name_id = $1 AND status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '10 months'
+       GROUP BY DATE_TRUNC('month', verified_at)
+       ORDER BY DATE_TRUNC('month', verified_at)`,
+      [r.name_id]
+    );
+    return {
+      name: r.name,
+      count: Number(r.current_count),
+      countries: 0,
+      changePercent: Number(r.absolute_growth),
+      trend: "rising" as const,
+      sparkline: spark.map((s: any) => s.cnt),
+    };
+  }));
+  res.json(result);
+});
+
+// GET /names/declining — from name_decline view
+router.get("/names/declining", async (req, res): Promise<void> => {
+  const parsed = GetDecliningNamesQueryParams.safeParse(req.query);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const { limit = 10 } = parsed.data;
+  const { rows } = await pool.query(
+    `SELECT nd.name_id, nd.name, nd.current_count, nd.absolute_change
+     FROM name_decline nd
+     ORDER BY nd.absolute_change ASC LIMIT $1`,
+    [limit]
+  );
+  const result = await Promise.all(rows.map(async (r: any) => {
+    const { rows: spark } = await pool.query(
+      `SELECT COUNT(*)::int AS cnt
+       FROM name_claims
+       WHERE name_id = $1 AND status = 'verified'
+         AND verified_at >= NOW() - INTERVAL '10 months'
+       GROUP BY DATE_TRUNC('month', verified_at)
+       ORDER BY DATE_TRUNC('month', verified_at)`,
+      [r.name_id]
+    );
+    return {
+      name: r.name,
+      count: Number(r.current_count),
+      countries: 0,
+      changePercent: Number(r.absolute_change),
+      trend: "falling" as const,
+      sparkline: spark.map((s: any) => s.cnt),
+    };
+  }));
+  res.json(result);
+});
+
+// GET /names/browse
 router.get("/names/browse", async (req, res): Promise<void> => {
   const parsed = BrowseNamesQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { sort = "popular", page = 1, limit = 20 } = parsed.data;
   const offset = (page - 1) * limit;
 
-  const orderBy = (() => {
-    switch (sort) {
-      case "longest":   return desc(sql`length(${namesTable.name})`);
-      case "shortest":  return asc(sql`length(${namesTable.name})`);
-      default:          return asc(namesTable.name);
-    }
-  })();
+  let orderExpr: string;
+  switch (sort) {
+    case "rare":      orderExpr = "total_claims ASC"; break;
+    case "longest":   orderExpr = "LENGTH(nr.name) DESC"; break;
+    case "shortest":  orderExpr = "LENGTH(nr.name) ASC"; break;
+    case "trending":  orderExpr = "total_claims DESC"; break;
+    case "declining": orderExpr = "total_claims ASC"; break;
+    default:          orderExpr = "rank ASC";
+  }
 
-  const [totalRow] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(namesTable);
+  const { rows: totalRows } = await pool.query(`SELECT COUNT(*)::int AS cnt FROM name_ranking`);
+  const total = totalRows[0]?.cnt ?? 0;
 
-  const results = await db
-    .select()
-    .from(namesTable)
-    .orderBy(orderBy)
-    .limit(limit)
-    .offset(offset);
+  const { rows } = await pool.query(
+    `SELECT nr.name_id, nr.name, nr.total_claims, nr.rank,
+            n.language_origin, n.cultural_origin, n.meaning, n.gender_association
+     FROM name_ranking nr
+     JOIN names n ON n.id = nr.name_id
+     ORDER BY ${orderExpr}
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
 
-  const total = totalRow?.count ?? 0;
   res.json({
-    items: results.map((n) => formatName(n)),
+    items: rows.map((r: any) => ({
+      name: r.name,
+      count: Number(r.total_claims),
+      countries: 0,
+      origin: r.language_origin ?? r.cultural_origin ?? null,
+      meaning: r.meaning ?? null,
+      gender: r.gender_association ?? null,
+    })),
     total,
     page,
-    hasMore: offset + results.length < total,
+    hasMore: offset + rows.length < total,
   });
 });
 
+// GET /names/rare — from name_rarity view
 router.get("/names/rare", async (req, res): Promise<void> => {
   const parsed = GetRareNamesQueryParams.safeParse(req.query);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const { limit = 10 } = parsed.data;
+  const { rows } = await pool.query(
+    `SELECT nr.name_id, nr.name, nr.total_claims,
+            n.language_origin, n.cultural_origin, n.meaning, n.gender_association
+     FROM name_rarity nr
+     JOIN names n ON n.id = nr.name_id
+     ORDER BY nr.rarity_rank LIMIT $1`,
+    [limit]
+  );
+  res.json(rows.map((r: any) => ({
+    name: r.name,
+    count: Number(r.total_claims),
+    countries: 0,
+    origin: r.language_origin ?? r.cultural_origin ?? null,
+    meaning: r.meaning ?? null,
+    gender: r.gender_association ?? null,
+  })));
+});
+
+// GET /names/by-decade — from name_by_generation view
+router.get("/names/by-decade", async (_req, res): Promise<void> => {
+  const { rows } = await pool.query(
+    `SELECT birth_decade, name FROM name_by_generation ORDER BY birth_decade`
+  );
+
+  // Group by decade: { decade: number, names: string[] }
+  const decadeMap = new Map<number, string[]>();
+  for (const r of rows) {
+    const d = Number(r.birth_decade);
+    if (!decadeMap.has(d)) decadeMap.set(d, []);
+    decadeMap.get(d)!.push(r.name);
+  }
+
+  // If no real data yet, return fallback
+  if (!decadeMap.size) {
+    res.json([
+      { decade: 1960, names: ["Maria", "José", "João", "Ana", "Pedro"] },
+      { decade: 1970, names: ["Carlos", "Fernanda", "Ricardo", "Patricia", "João"] },
+      { decade: 1980, names: ["Ana", "Lucas", "Maria", "Gabriel", "Camila"] },
+      { decade: 1990, names: ["Isabela", "Mateus", "Sofia", "Rafael", "Julia"] },
+      { decade: 2000, names: ["Gabriel", "Sofia", "Lucas", "Ana", "Arthur"] },
+      { decade: 2010, names: ["Arthur", "Enzo", "Davi", "Valentina", "Lara"] },
+    ]);
     return;
   }
-  const { limit = 10 } = parsed.data;
-  // Rare: names with fewest verified claims
-  const results = await db
-    .select({
-      id: namesTable.id,
-      name: namesTable.name,
-      languageOrigin: namesTable.languageOrigin,
-      culturalOrigin: namesTable.culturalOrigin,
-      meaning: namesTable.meaning,
-      variations: namesTable.variations,
-      genderAssociation: namesTable.genderAssociation,
-      createdAt: namesTable.createdAt,
-      updatedAt: namesTable.updatedAt,
-      claimCount: sql<number>`count(${nameClaimsTable.id})::int`,
-    })
-    .from(namesTable)
-    .leftJoin(nameClaimsTable, sql`${nameClaimsTable.nameId} = ${namesTable.id} AND ${nameClaimsTable.status} = 'verified'`)
-    .groupBy(namesTable.id)
-    .orderBy(asc(sql`count(${nameClaimsTable.id})`))
-    .limit(limit);
-  res.json(results.map((n) => formatName(n, n.claimCount)));
+
+  res.json(
+    Array.from(decadeMap.entries()).map(([decade, names]) => ({ decade, names }))
+  );
 });
 
-router.get("/names/by-decade", async (_req, res): Promise<void> => {
-  const decades = [
-    { decade: 1950, names: ["Maria", "José", "Ana", "João", "Francisco"] },
-    { decade: 1960, names: ["John", "Mary", "James", "Patricia", "Robert"] },
-    { decade: 1970, names: ["Jennifer", "Michael", "Lisa", "David", "Linda"] },
-    { decade: 1980, names: ["Michael", "Jessica", "Christopher", "Ashley", "Matthew"] },
-    { decade: 1990, names: ["Jessica", "Michael", "Ashley", "Joshua", "Brittany"] },
-    { decade: 2000, names: ["Emma", "Liam", "Olivia", "Noah", "Isabella"] },
-    { decade: 2010, names: ["Olivia", "Noah", "Emma", "Liam", "Ava"] },
-    { decade: 2020, names: ["Lucas", "Olivia", "Noah", "Emma", "Liam"] },
-  ];
-  res.json(decades);
-});
-
+// GET /names/:name/history — from name_popularity view
 router.get("/names/:name/history", async (req, res): Promise<void> => {
   const params = GetNameHistoryParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const nameParam = Array.isArray(params.data.name) ? params.data.name[0] : params.data.name;
-  const [name] = await db
-    .select()
-    .from(namesTable)
-    .where(ilike(namesTable.name, nameParam))
-    .limit(1);
-  if (!name) {
-    res.json([]);
-    return;
-  }
-  // History derived from verified claims grouped by year
-  const history = await db
-    .select({
-      year: sql<number>`EXTRACT(YEAR FROM ${nameClaimsTable.verifiedAt})::int`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(nameClaimsTable)
-    .where(sql`${nameClaimsTable.nameId} = ${name.id} AND ${nameClaimsTable.status} = 'verified'`)
-    .groupBy(sql`EXTRACT(YEAR FROM ${nameClaimsTable.verifiedAt})`)
-    .orderBy(asc(sql`EXTRACT(YEAR FROM ${nameClaimsTable.verifiedAt})`));
-  res.json(history.map((h) => ({ year: h.year, count: h.count, rank: null })));
+  const { rows } = await pool.query(
+    `SELECT year::int, total::int AS count FROM name_popularity
+     WHERE LOWER(name) = LOWER($1) ORDER BY year`,
+    [nameParam]
+  );
+  res.json(rows.map((h: any) => ({ year: h.year, count: h.count, rank: null })));
 });
 
+// GET /names/:name/countries — from name_regions view
 router.get("/names/:name/countries", async (req, res): Promise<void> => {
   const params = GetNameCountriesParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const nameParam = Array.isArray(params.data.name) ? params.data.name[0] : params.data.name;
-  const [name] = await db
-    .select()
-    .from(namesTable)
-    .where(ilike(namesTable.name, nameParam))
-    .limit(1);
-  if (!name) {
-    res.json([]);
-    return;
-  }
-  // Countries derived from people's birth_country via verified claims
-  const { peopleTable } = await import("@workspace/db");
-  const countries = await db
-    .select({
-      country: peopleTable.birthCountry,
-      total: sql<number>`count(*)::int`,
-    })
-    .from(nameClaimsTable)
-    .innerJoin(peopleTable, sql`${peopleTable.id} = ${nameClaimsTable.personId}`)
-    .where(sql`${nameClaimsTable.nameId} = ${name.id} AND ${nameClaimsTable.status} = 'verified'`)
-    .groupBy(peopleTable.birthCountry)
-    .orderBy(desc(sql`count(*)`))
-    .limit(10);
-  res.json(countries.map((c) => ({
-    country: c.country ?? "Unknown",
+  const { rows } = await pool.query(
+    `SELECT birth_country, birth_state, birth_city, total FROM name_regions
+     WHERE LOWER(name) = LOWER($1) ORDER BY total DESC LIMIT 10`,
+    [nameParam]
+  );
+  res.json(rows.map((c: any) => ({
+    country: c.birth_country ?? "Unknown",
     countryCode: "",
-    count: c.total,
+    count: Number(c.total),
     percentage: 0,
   })));
 });
 
+// GET /names/:name — name detail with ranking + regions
 router.get("/names/:name", async (req, res): Promise<void> => {
   const params = GetNameDetailParams.safeParse(req.params);
-  if (!params.success) {
-    res.status(400).json({ error: params.error.message });
-    return;
-  }
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const nameParam = Array.isArray(params.data.name) ? params.data.name[0] : params.data.name;
-  const [name] = await db
+
+  const [nameRow] = await db
     .select()
     .from(namesTable)
     .where(ilike(namesTable.name, nameParam))
     .limit(1);
-  if (!name) {
-    res.status(404).json({ error: "Name not found" });
-    return;
-  }
-  const [claimCount] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(nameClaimsTable)
-    .where(sql`${nameClaimsTable.nameId} = ${name.id} AND ${nameClaimsTable.status} = 'verified'`);
+
+  if (!nameRow) { res.status(404).json({ error: "Name not found" }); return; }
+
+  const { rows: rankRows } = await pool.query(
+    `SELECT total_claims, rank FROM name_ranking WHERE name_id = $1`,
+    [nameRow.id]
+  );
+  const { rows: regionRows } = await pool.query(
+    `SELECT birth_country, SUM(total)::int AS total
+     FROM name_regions WHERE name_id = $1 AND birth_country IS NOT NULL
+     GROUP BY birth_country ORDER BY SUM(total) DESC LIMIT 5`,
+    [nameRow.id]
+  );
+  const { rows: sparkRows } = await pool.query(
+    `SELECT COUNT(*)::int AS cnt
+     FROM name_claims
+     WHERE name_id = $1 AND status = 'verified'
+       AND verified_at >= NOW() - INTERVAL '10 months'
+     GROUP BY DATE_TRUNC('month', verified_at)
+     ORDER BY DATE_TRUNC('month', verified_at)`,
+    [nameRow.id]
+  );
+
+  const totalClaims = Number(rankRows[0]?.total_claims ?? 0);
 
   res.json({
-    name: name.name,
-    count: Number(claimCount?.total ?? 0),
-    countries: 0,
-    origin: name.languageOrigin ?? name.culturalOrigin ?? "Unknown",
-    meaning: name.meaning ?? "Unknown",
-    gender: name.genderAssociation ?? "neutral",
-    topCountries: [],
+    name: nameRow.name,
+    count: totalClaims,
+    countries: regionRows.length,
+    origin: nameRow.languageOrigin ?? nameRow.culturalOrigin ?? "Unknown",
+    meaning: nameRow.meaning ?? "Unknown",
+    gender: nameRow.genderAssociation ?? "neutral",
+    topCountries: regionRows.map((c: any) => ({
+      country: c.birth_country,
+      countryCode: "",
+      count: Number(c.total),
+      percentage: totalClaims ? Math.round((Number(c.total) / totalClaims) * 100) : 0,
+    })),
     changePercent: null,
-    sparkline: [],
+    sparkline: sparkRows.map((s: any) => s.cnt),
   });
 });
 
