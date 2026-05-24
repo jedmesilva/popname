@@ -471,20 +471,30 @@ router.get("/names/:name", async (req, res): Promise<void> => {
       [nameParam]
     ),
     pool.query(
-      `SELECT COUNT(*)::int AS cnt
+      `SELECT
+         EXTRACT(YEAR FROM registration_date)::int AS yr,
+         COUNT(*)::int AS cnt
        FROM names
-       WHERE LOWER(name_text) = LOWER($1) AND status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '10 months'
-       GROUP BY DATE_TRUNC('month', verified_at)
-       ORDER BY DATE_TRUNC('month', verified_at)`,
+       WHERE LOWER(name_text) = LOWER($1)
+         AND registration_date IS NOT NULL
+         AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
+       GROUP BY yr
+       ORDER BY yr`,
       [nameParam]
     ),
     pool.query(
       `SELECT
-         COUNT(*) FILTER (WHERE verified_at >= NOW() - INTERVAL '1 year') AS recent,
-         COUNT(*) FILTER (WHERE verified_at < NOW() - INTERVAL '1 year') AS older
+         COUNT(*) FILTER (
+           WHERE registration_date IS NOT NULL
+             AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
+         ) AS recent,
+         COUNT(*) FILTER (
+           WHERE registration_date IS NOT NULL
+             AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 19
+             AND EXTRACT(YEAR FROM registration_date) < EXTRACT(YEAR FROM NOW()) - 9
+         ) AS older
        FROM names
-       WHERE LOWER(name_text) = LOWER($1) AND status = 'verified' AND verified_at IS NOT NULL`,
+       WHERE LOWER(name_text) = LOWER($1)`,
       [nameParam]
     ),
   ]);
