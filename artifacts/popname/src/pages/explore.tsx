@@ -292,11 +292,7 @@ function BrowseTab() {
         </Dropdown>
 
         {/* Country */}
-        <Dropdown icon={Globe} label={countryLabel ?? "Todos os países"} active={!!country}>
-          <div className="w-64">
-            <CountryPicker value={country} onChange={v => { changeCountry(v); }} />
-          </div>
-        </Dropdown>
+        <CountryPicker value={country} onChange={v => changeCountry(v)} />
 
         {/* Generation */}
         <Dropdown icon={Users} label={genLabel ?? "Todas as gerações"} active={!!generation}>
