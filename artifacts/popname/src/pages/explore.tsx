@@ -37,12 +37,12 @@ const SORT_OPTIONS = [
 type SortValue = typeof SORT_OPTIONS[number]["value"];
 
 const ERA_PRESETS = [
-  { label: "Antes de 1950",   from: null,  to: 1949  },
+  { label: "Antes de 1950",   from: null,  to: 1950  },
   { label: "1950–1970",       from: 1950,  to: 1970  },
   { label: "1970–1990",       from: 1970,  to: 1990  },
   { label: "1990–2000",       from: 1990,  to: 2000  },
   { label: "2000–2010",       from: 2000,  to: 2010  },
-  { label: "2010+",           from: 2010,  to: null  },
+  { label: "A partir de 2010", from: 2010, to: null  },
 ] as const;
 
 // ─── Sparkline SVG ────────────────────────────────────────────────────────────
@@ -223,10 +223,14 @@ export function Explore() {
   const isTrend      = sort === "trending" || sort === "declining";
   const sortLabel    = SORT_OPTIONS.find(o => o.value === sort)?.label ?? "Popularidade";
   const countryLabel = country ? ALL_COUNTRIES.find(c => c.code === country)?.name : null;
-  const eraActive    = !!(yearFrom || yearTo);
-  const eraLabel     = eraActive
-    ? `${yearFrom ?? "?"} – ${yearTo ?? CURRENT_YEAR}`
-    : "Qualquer período";
+  const eraActive = !!(yearFrom || yearTo);
+  const eraLabel  = !eraActive
+    ? "Qualquer período"
+    : yearFrom && yearTo
+      ? `${yearFrom} – ${yearTo}`
+      : yearTo
+        ? `Antes de ${yearTo}`
+        : `A partir de ${yearFrom}`;
   const hasFilters   = !!(country || eraActive || sort !== "popular");
 
   return (
