@@ -79,7 +79,7 @@ router.get("/index/featured", async (_req, res): Promise<void> => {
     gender: meaning?.gender_association ?? "neutral",
     topCountries: regionRows.map((c: any) => ({
       country: c.birth_country,
-      countryCode: "",
+      countryCode: c.birth_country,
       count: Number(c.total),
       percentage: totalClaims ? Math.round((Number(c.total) / totalClaims) * 100) : 0,
     })),

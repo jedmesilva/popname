@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import * as Flags from "country-flag-icons/react/3x2";
+
 import {
   useGetIndexStats, getGetIndexStatsQueryKey,
   useGetTrendingNames, getGetTrendingNamesQueryKey,
@@ -15,6 +16,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { ArrowUpRight, TrendingUp, Search } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
+
+const COUNTRY_NAMES: Record<string, string> = {
+  AR: "Argentina", AU: "Austrália", BR: "Brasil", CA: "Canadá",
+  CL: "Chile", CN: "China", CO: "Colômbia", DE: "Alemanha",
+  ES: "Espanha", FR: "França", GB: "Reino Unido", IN: "Índia",
+  IT: "Itália", JP: "Japão", MX: "México", NG: "Nigéria",
+  PT: "Portugal", RU: "Rússia", US: "Estados Unidos", ZA: "África do Sul",
+};
 
 export function Home() {
   const [query, setQuery] = useState("");
@@ -202,20 +211,27 @@ export function Home() {
                   Top países
                 </p>
                 <div className="space-y-3">
-                  {featured.topCountries?.slice(0, 5).map((c) => (
-                    <div key={c.countryCode} className="flex items-center gap-4">
-                      <div className="w-32 font-mono text-sm truncate">{c.country}</div>
-                      <div className="flex-1 h-1 bg-border rounded-full">
-                        <div
-                          className="h-1 bg-accent rounded-full"
-                          style={{ width: `${c.percentage}%` }}
-                        />
+                  {featured.topCountries?.slice(0, 5).map((c) => {
+                    const FlagComponent = (Flags as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[c.countryCode ?? ""];
+                    const countryName = COUNTRY_NAMES[c.countryCode ?? ""] ?? c.country;
+                    return (
+                      <div key={c.countryCode} className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 w-36 shrink-0">
+                          {FlagComponent && <FlagComponent className="w-5 h-auto rounded-sm shrink-0" />}
+                          <span className="font-mono text-sm truncate">{countryName}</span>
+                        </div>
+                        <div className="flex-1 h-1 bg-border rounded-full">
+                          <div
+                            className="h-1 bg-accent rounded-full"
+                            style={{ width: `${c.percentage}%` }}
+                          />
+                        </div>
+                        <div className="font-mono text-sm text-muted-foreground w-10 text-right">
+                          {c.percentage}%
+                        </div>
                       </div>
-                      <div className="font-mono text-sm text-muted-foreground w-10 text-right">
-                        {c.percentage}%
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
