@@ -117,12 +117,11 @@ interface NameCardProps {
   name: string;
   count: number;
   countries: number;
-  rank: number;
   sort: SortValue;
   period: PeriodValue;
 }
 
-function NameCard({ name, count, countries, rank, sort, period }: NameCardProps) {
+function NameCard({ name, count, countries, sort, period }: NameCardProps) {
   const trend   = nameTrend(name, period);
   const rising  = sort === "declining" ? false : sort === "trending" ? true : trend >= 0;
   const showPct = sort === "trending" || sort === "declining";
@@ -136,7 +135,6 @@ function NameCard({ name, count, countries, rank, sort, period }: NameCardProps)
       className="border border-border bg-card flex flex-col gap-3 p-4 hover:border-accent/70 transition-colors group">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-mono text-[10px] text-muted-foreground mb-0.5">#{rank}</div>
           <span className="text-xl font-bold uppercase tracking-tighter group-hover:text-accent transition-colors leading-none">
             {name}
           </span>
@@ -421,13 +419,12 @@ export function Explore() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-4">
             {isLoading
               ? Array(20).fill(0).map((_, i) => <Skeleton key={i} className="h-44" />)
-              : (data?.items as BrowseItem[] ?? []).map((item, idx) => (
+              : (data?.items as BrowseItem[] ?? []).map((item) => (
                 <NameCard
                   key={item.name}
                   name={item.name}
                   count={item.count}
                   countries={item.countries}
-                  rank={(page - 1) * 20 + idx + 1}
                   sort={sort}
                   period={period}
                 />
@@ -453,9 +450,6 @@ export function Explore() {
                 return (
                   <Link key={item.name} href={`/nome/${item.name}`}
                     className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors group">
-                    <span className="font-mono text-xs text-muted-foreground w-8 shrink-0">
-                      #{(page - 1) * 30 + idx + 1}
-                    </span>
                     <span className="text-base font-bold uppercase tracking-tight w-36 shrink-0 group-hover:text-accent transition-colors truncate">
                       {item.name}
                     </span>
