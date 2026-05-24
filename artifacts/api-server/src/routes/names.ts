@@ -495,11 +495,27 @@ router.get("/names/:name/history", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const nameParam = Array.isArray(params.data.name) ? params.data.name[0] : params.data.name;
   const { rows } = await pool.query(
-    `SELECT year::int, total::int AS count FROM name_popularity
-     WHERE LOWER(name) = LOWER($1) ORDER BY year`,
+    `WITH yearly_totals AS (
+       SELECT EXTRACT(YEAR FROM periodo)::int AS yr,
+              SUM(total_nome)::bigint         AS total_all
+       FROM name_history
+       GROUP BY yr
+     ),
+     name_yearly AS (
+       SELECT EXTRACT(YEAR FROM periodo)::int AS yr,
+              SUM(total_nome)::bigint         AS total_name
+       FROM name_history
+       WHERE LOWER(name_text) = LOWER($1)
+       GROUP BY yr
+     )
+     SELECT ny.yr AS year,
+       ROUND(ny.total_name::numeric / NULLIF(yt.total_all, 0) * 100, 4)::float AS pct
+     FROM name_yearly ny
+     JOIN yearly_totals yt ON yt.yr = ny.yr
+     ORDER BY ny.yr`,
     [nameParam]
   );
-  res.json(rows.map((h: any) => ({ year: h.year, count: h.count, rank: null })));
+  res.json(rows.map((h: any) => ({ year: Number(h.year), pct: Number(h.pct) })));
 });
 
 // GET /names/:name/countries

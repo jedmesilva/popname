@@ -114,33 +114,35 @@ export function NameDetail() {
               <div className="h-[300px] w-full">
                 {loadingHistory ? (
                   <Skeleton className="w-full h-full" />
-                ) : history ? (
+                ) : history && (history as any[]).length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={history}>
-                      <XAxis 
-                        dataKey="year" 
-                        stroke="#888" 
-                        tick={{fill: '#888', fontSize: 12, fontFamily: 'monospace'}}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis 
+                    <LineChart data={history as any[]}>
+                      <XAxis
+                        dataKey="year"
                         stroke="#888"
-                        tick={{fill: '#888', fontSize: 12, fontFamily: 'monospace'}}
+                        tick={{ fill: '#888', fontSize: 12, fontFamily: 'monospace' }}
                         axisLine={false}
                         tickLine={false}
-                        tickFormatter={(value) => (value >= 1000 ? `${(value/1000).toFixed(1)}k` : value)}
                       />
-                      <Tooltip 
+                      <YAxis
+                        stroke="#888"
+                        tick={{ fill: '#888', fontSize: 12, fontFamily: 'monospace' }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => `${Number(v).toFixed(1)}%`}
+                        domain={[0, 'auto']}
+                      />
+                      <Tooltip
                         contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', fontFamily: 'monospace', textTransform: 'uppercase' }}
                         itemStyle={{ color: 'hsl(var(--foreground))' }}
+                        formatter={(v: any) => [`${Number(v).toFixed(2)}%`, 'Participação']}
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="count" 
-                        stroke="hsl(var(--accent))" 
+                      <Line
+                        type="monotone"
+                        dataKey="pct"
+                        stroke="hsl(var(--accent))"
                         strokeWidth={2}
-                        dot={false}
+                        dot={{ r: 3, fill: "hsl(var(--accent))" }}
                         activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
                       />
                     </LineChart>
