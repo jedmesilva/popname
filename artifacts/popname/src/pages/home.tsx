@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import * as Flags from "country-flag-icons/react/3x2";
 import {
   useGetIndexStats, getGetIndexStatsQueryKey,
   useGetTrendingNames, getGetTrendingNamesQueryKey,
@@ -304,19 +305,24 @@ export function Home() {
               <div className="space-y-2 flex-1">
                 {loadingByCountry
                   ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-5 w-full" />)
-                  : (Array.isArray(namesByCountry) ? namesByCountry : []).map((item) => (
-                    <div key={`${item.name}-${item.country}`} className="flex items-center gap-2 font-mono text-sm">
-                      <span className="text-muted-foreground w-6 text-xs">{item.country}</span>
-                      <span className="w-px h-3 bg-border" />
-                      <Link
-                        href={`/nome/${item.name}`}
-                        className="uppercase hover:text-accent transition-colors flex-1"
-                      >
-                        {item.name}
-                      </Link>
-                      <span className="text-muted-foreground text-xs">{item.count}×</span>
-                    </div>
-                  ))}
+                  : (Array.isArray(namesByCountry) ? namesByCountry : []).map((item) => {
+                    const FlagComponent = (Flags as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[item.country];
+                    return (
+                      <div key={`${item.name}-${item.country}`} className="flex items-center gap-2 font-mono text-sm">
+                        {FlagComponent
+                          ? <FlagComponent className="w-5 h-auto rounded-sm shrink-0" />
+                          : <span className="text-muted-foreground text-xs w-5">{item.country}</span>
+                        }
+                        <Link
+                          href={`/nome/${item.name}`}
+                          className="uppercase hover:text-accent transition-colors flex-1"
+                        >
+                          {item.name}
+                        </Link>
+                        <span className="text-muted-foreground text-xs">{item.count}×</span>
+                      </div>
+                    );
+                  })}
               </div>
               <Link
                 href="/paises"
