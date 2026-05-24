@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './browseNamesGeneration';
 export * from './browseNamesParams';
 export * from './browseNamesSort';
 export * from './browseResult';

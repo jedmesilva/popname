@@ -5,7 +5,6 @@
  * POPNAME – Human Name Index API
  * OpenAPI spec version: 0.1.0
  */
-import type { BrowseNamesGeneration } from './browseNamesGeneration';
 import type { BrowseNamesSort } from './browseNamesSort';
 
 export type BrowseNamesParams = {
@@ -17,7 +16,11 @@ country?: string | null;
 /**
  * @nullable
  */
-generation?: BrowseNamesGeneration;
+yearFrom?: number | null;
+/**
+ * @nullable
+ */
+yearTo?: number | null;
 page?: number;
 limit?: number;
 };

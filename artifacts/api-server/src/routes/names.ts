@@ -216,40 +216,94 @@ router.get("/names/declining", async (req, res): Promise<void> => {
 router.get("/names/browse", async (req, res): Promise<void> => {
   const parsed = BrowseNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const { sort = "popular", page = 1, limit = 20 } = parsed.data;
+  const { sort = "popular", page = 1, limit = 20, country, yearFrom, yearTo } = parsed.data;
   const offset = (page - 1) * limit;
+  const hasFilters = !!(country || yearFrom || yearTo);
 
-  let orderExpr: string;
-  switch (sort) {
-    case "rare":      orderExpr = "nr.total_claims ASC"; break;
-    case "longest":   orderExpr = "LENGTH(nr.name) DESC"; break;
-    case "shortest":  orderExpr = "LENGTH(nr.name) ASC"; break;
-    case "trending":  orderExpr = "nr.total_claims DESC"; break;
-    case "declining": orderExpr = "nr.total_claims ASC"; break;
-    default:          orderExpr = "nr.rank ASC";
+  let rows: any[];
+  let total: number;
+
+  if (hasFilters) {
+    // Dynamic filtered query directly from names table
+    const conds: string[] = [];
+    const vals: any[] = [];
+    let i = 1;
+    if (country)  { conds.push(`LOWER(n.birth_country) = LOWER($${i++})`);                      vals.push(country); }
+    if (yearFrom) { conds.push(`EXTRACT(YEAR FROM n.registration_date) >= $${i++}`);             vals.push(yearFrom); }
+    if (yearTo)   { conds.push(`EXTRACT(YEAR FROM n.registration_date) <= $${i++}`);             vals.push(yearTo); }
+    if (yearFrom || yearTo) conds.push(`n.registration_date IS NOT NULL`);
+
+    const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
+
+    let filteredOrder: string;
+    switch (sort) {
+      case "rare":      filteredOrder = "total_claims ASC";       break;
+      case "longest":   filteredOrder = "LENGTH(name) DESC";      break;
+      case "shortest":  filteredOrder = "LENGTH(name) ASC";       break;
+      case "declining": filteredOrder = "total_claims ASC";       break;
+      default:          filteredOrder = "total_claims DESC";
+    }
+
+    const [{ rows: countRows }, { rows: nameRows }] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(DISTINCT n.name_text)::int AS cnt FROM names n ${where}`,
+        vals
+      ),
+      pool.query(
+        `SELECT
+           n.name_text AS name,
+           COUNT(*)::int AS total_claims,
+           COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count,
+           nm.meaning, nm.language_origin, nm.cultural_origin, nm.gender_association
+         FROM names n
+         LEFT JOIN name_meanings nm ON nm.name_text = n.name_text
+         ${where}
+         GROUP BY n.name_text, nm.meaning, nm.language_origin, nm.cultural_origin, nm.gender_association
+         ORDER BY ${filteredOrder}
+         LIMIT $${i++} OFFSET $${i++}`,
+        [...vals, limit, offset]
+      ),
+    ]);
+
+    total = countRows[0]?.cnt ?? 0;
+    rows  = nameRows;
+  } else {
+    // Unfiltered: use pre-ranked name_ranking table
+    let orderExpr: string;
+    switch (sort) {
+      case "rare":      orderExpr = "nr.total_claims ASC";  break;
+      case "longest":   orderExpr = "LENGTH(nr.name) DESC"; break;
+      case "shortest":  orderExpr = "LENGTH(nr.name) ASC";  break;
+      case "trending":  orderExpr = "nr.total_claims DESC"; break;
+      case "declining": orderExpr = "nr.total_claims ASC";  break;
+      default:          orderExpr = "nr.rank ASC";
+    }
+
+    const [{ rows: totalRows }, { rows: nameRows }] = await Promise.all([
+      pool.query(`SELECT COUNT(*)::int AS cnt FROM name_ranking`),
+      pool.query(
+        `SELECT
+           nr.name,
+           nr.total_claims,
+           nr.rank,
+           nm.meaning,
+           nm.language_origin,
+           nm.cultural_origin,
+           nm.gender_association,
+           COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
+         FROM name_ranking nr
+         LEFT JOIN name_meanings nm ON nm.name_text = nr.name
+         LEFT JOIN names n ON LOWER(n.name_text) = LOWER(nr.name) AND n.status = 'verified'
+         GROUP BY nr.name, nr.total_claims, nr.rank, nm.meaning, nm.language_origin, nm.cultural_origin, nm.gender_association
+         ORDER BY ${orderExpr}
+         LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      ),
+    ]);
+
+    total = totalRows[0]?.cnt ?? 0;
+    rows  = nameRows;
   }
-
-  const { rows: totalRows } = await pool.query(`SELECT COUNT(*)::int AS cnt FROM name_ranking`);
-  const total = totalRows[0]?.cnt ?? 0;
-
-  const { rows } = await pool.query(
-    `SELECT
-       nr.name,
-       nr.total_claims,
-       nr.rank,
-       nm.meaning,
-       nm.language_origin,
-       nm.cultural_origin,
-       nm.gender_association,
-       COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
-     FROM name_ranking nr
-     LEFT JOIN name_meanings nm ON nm.name_text = nr.name
-     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(nr.name) AND n.status = 'verified'
-     GROUP BY nr.name, nr.total_claims, nr.rank, nm.meaning, nm.language_origin, nm.cultural_origin, nm.gender_association
-     ORDER BY ${orderExpr}
-     LIMIT $1 OFFSET $2`,
-    [limit, offset]
-  );
 
   const nameList = rows.map((r: any) => r.name as string);
 

@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { CountryPicker, ALL_COUNTRIES } from "@/components/country-picker";
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BrowseItem {
@@ -34,23 +36,14 @@ const SORT_OPTIONS = [
 ] as const;
 type SortValue = typeof SORT_OPTIONS[number]["value"];
 
-const PERIOD_OPTIONS = [
-  { value: "7d",   label: "Últimos 7 dias"  },
-  { value: "30d",  label: "Últimos 30 dias" },
-  { value: "90d",  label: "Últimos 90 dias" },
-  { value: "1y",   label: "Este ano"        },
-  { value: "5y",   label: "Últimos 5 anos"  },
+const ERA_PRESETS = [
+  { label: "Antes de 1950",   from: null,  to: 1949  },
+  { label: "1950–1970",       from: 1950,  to: 1970  },
+  { label: "1970–1990",       from: 1970,  to: 1990  },
+  { label: "1990–2000",       from: 1990,  to: 2000  },
+  { label: "2000–2010",       from: 2000,  to: 2010  },
+  { label: "2010+",           from: 2010,  to: null  },
 ] as const;
-type PeriodValue = typeof PERIOD_OPTIONS[number]["value"];
-
-const GENERATIONS = [
-  { key: "boomer",     label: "Baby Boomer",   years: "1946–1964" },
-  { key: "genx",       label: "Geração X",     years: "1965–1980" },
-  { key: "millennial", label: "Millennial",    years: "1981–1996" },
-  { key: "genz",       label: "Geração Z",     years: "1997–2012" },
-  { key: "alpha",      label: "Geração Alpha", years: "2013+"     },
-] as const;
-type GenerationKey = typeof GENERATIONS[number]["key"];
 
 // ─── Sparkline SVG ────────────────────────────────────────────────────────────
 
@@ -192,26 +185,35 @@ function Dropdown({ icon: Icon, label, active, children }: DropdownProps) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function Explore() {
-  const [, setLocation]             = useLocation();
-  const [sort, setSort]             = useState<SortValue>("popular");
-  const [period, setPeriod]         = useState<PeriodValue>("30d");
-  const [country, setCountry]       = useState<string | null>(null);
-  const [generation, setGeneration] = useState<GenerationKey | null>(null);
-  const [page, setPage]             = useState(1);
-  const [grid, setGrid]             = useState(true);
-  const [searchQ, setSearchQ]       = useState("");
+  const [, setLocation]         = useLocation();
+  const [sort, setSort]         = useState<SortValue>("popular");
+  const [country, setCountry]   = useState<string | null>(null);
+  const [yearFrom, setYearFrom] = useState<number | null>(null);
+  const [yearTo, setYearTo]     = useState<number | null>(null);
+  const [page, setPage]         = useState(1);
+  const [grid, setGrid]         = useState(true);
+  const [searchQ, setSearchQ]   = useState("");
+  const [eraOpen, setEraOpen]   = useState(false);
 
   const reset = useCallback(() => setPage(1), []);
 
   const { data, isLoading } = useBrowseNames(
-    { sort, page, limit: grid ? 20 : 30, ...(country ? { country } : {}), ...(generation ? { generation } : {}) },
+    {
+      sort, page, limit: grid ? 20 : 30,
+      ...(country  ? { country }  : {}),
+      ...(yearFrom ? { yearFrom } : {}),
+      ...(yearTo   ? { yearTo }   : {}),
+    },
     {}
   );
 
-  function changeSort(v: SortValue)                  { setSort(v);       reset(); }
-  function changeCountry(v: string | null)           { setCountry(v);    reset(); }
-  function changeGeneration(v: GenerationKey | null) { setGeneration(v); reset(); }
-  function clearAll() { setCountry(null); setGeneration(null); setSort("popular"); setPeriod("30d"); reset(); }
+  function changeSort(v: SortValue)        { setSort(v);       reset(); }
+  function changeCountry(v: string | null) { setCountry(v);    reset(); }
+  function applyPreset(from: number | null, to: number | null) {
+    setYearFrom(from); setYearTo(to); setEraOpen(false); reset();
+  }
+  function clearEra() { setYearFrom(null); setYearTo(null); reset(); }
+  function clearAll()  { setCountry(null); setYearFrom(null); setYearTo(null); setSort("popular"); reset(); }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -220,10 +222,12 @@ export function Explore() {
 
   const isTrend      = sort === "trending" || sort === "declining";
   const sortLabel    = SORT_OPTIONS.find(o => o.value === sort)?.label ?? "Popularidade";
-  const periodLabel  = PERIOD_OPTIONS.find(p => p.value === period)?.label ?? "Últimos 30 dias";
-  const genLabel     = generation ? GENERATIONS.find(g => g.key === generation)?.label : null;
   const countryLabel = country ? ALL_COUNTRIES.find(c => c.code === country)?.name : null;
-  const hasFilters   = !!(country || generation || sort !== "popular" || period !== "30d");
+  const eraActive    = !!(yearFrom || yearTo);
+  const eraLabel     = eraActive
+    ? `${yearFrom ?? "?"} – ${yearTo ?? CURRENT_YEAR}`
+    : "Qualquer era";
+  const hasFilters   = !!(country || eraActive || sort !== "popular");
 
   return (
     <div className="flex-1 flex flex-col">
@@ -281,36 +285,87 @@ export function Explore() {
           {/* Country — uses its own built-in dropdown */}
           <CountryPicker value={country} onChange={v => changeCountry(v)} />
 
-          {/* Generation */}
-          <Dropdown icon={Users} label={genLabel ?? "Todas as gerações"} active={!!generation}>
-            <button onClick={() => changeGeneration(null)}
-              className={`w-full text-left px-4 py-2.5 font-mono text-xs uppercase tracking-wide hover:bg-muted transition-colors ${
-                !generation ? "text-accent" : "text-muted-foreground"
-              }`}>
-              Todas as gerações
+          {/* Era / Year range */}
+          <div className="relative">
+            <button
+              onClick={() => setEraOpen(o => !o)}
+              className={`flex items-center gap-2 px-3 py-2 border font-mono text-xs uppercase tracking-wide transition-colors ${
+                eraActive
+                  ? "border-accent/60 bg-accent/10 text-accent"
+                  : "border-border bg-card text-muted-foreground hover:border-accent/40 hover:text-foreground"
+              }`}
+            >
+              <Calendar className="w-3.5 h-3.5 shrink-0" />
+              {eraLabel}
+              {eraActive
+                ? <X className="w-3 h-3 ml-1" onClick={e => { e.stopPropagation(); clearEra(); }} />
+                : <ChevronDown className="w-3 h-3 ml-1" />
+              }
             </button>
-            {GENERATIONS.map(g => (
-              <button key={g.key} onClick={() => changeGeneration(g.key)}
-                className={`w-full text-left px-4 py-2.5 font-mono text-xs uppercase tracking-wide hover:bg-muted transition-colors ${
-                  generation === g.key ? "text-accent" : "text-muted-foreground"
-                }`}>
-                {g.label}
-                <span className="text-muted-foreground/50 ml-1 normal-case text-[10px]">{g.years}</span>
-              </button>
-            ))}
-          </Dropdown>
 
-          {/* Period */}
-          <Dropdown icon={Calendar} label={periodLabel} active={period !== "30d"}>
-            {PERIOD_OPTIONS.map(p => (
-              <button key={p.value} onClick={() => setPeriod(p.value)}
-                className={`w-full text-left px-4 py-2.5 font-mono text-xs uppercase tracking-wide hover:bg-muted transition-colors ${
-                  p.value === period ? "text-accent" : "text-muted-foreground"
-                }`}>
-                {p.label}
-              </button>
-            ))}
-          </Dropdown>
+            {eraOpen && (
+              <div className="absolute top-full left-0 mt-1 z-50 min-w-[240px] border border-border bg-card shadow-lg">
+                {/* Presets */}
+                <div className="px-3 pt-3 pb-2">
+                  <p className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider mb-2">
+                    Era predefinida
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => applyPreset(null, null)}
+                      className={`px-2.5 py-1 border font-mono text-[10px] uppercase tracking-wide transition-colors ${
+                        !yearFrom && !yearTo
+                          ? "border-accent text-accent bg-accent/10"
+                          : "border-border text-muted-foreground hover:border-accent/40"
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    {ERA_PRESETS.map(p => {
+                      const active = yearFrom === p.from && yearTo === p.to;
+                      return (
+                        <button key={p.label}
+                          onClick={() => applyPreset(p.from as number | null, p.to as number | null)}
+                          className={`px-2.5 py-1 border font-mono text-[10px] uppercase tracking-wide transition-colors ${
+                            active
+                              ? "border-accent text-accent bg-accent/10"
+                              : "border-border text-muted-foreground hover:border-accent/40"
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Custom range */}
+                <div className="border-t border-border px-3 py-3">
+                  <p className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider mb-2">
+                    Intervalo personalizado
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="De"
+                      min={1900} max={CURRENT_YEAR}
+                      value={yearFrom ?? ""}
+                      onChange={e => { const v = e.target.value ? Number(e.target.value) : null; setYearFrom(v); reset(); }}
+                      className="w-20 px-2 py-1.5 border border-border bg-background font-mono text-xs text-center focus:border-accent/60 outline-none"
+                    />
+                    <span className="font-mono text-xs text-muted-foreground">–</span>
+                    <input
+                      type="number"
+                      placeholder="Até"
+                      min={1900} max={CURRENT_YEAR}
+                      value={yearTo ?? ""}
+                      onChange={e => { const v = e.target.value ? Number(e.target.value) : null; setYearTo(v); reset(); }}
+                      className="w-20 px-2 py-1.5 border border-border bg-background font-mono text-xs text-center focus:border-accent/60 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
         </div>
 
@@ -331,7 +386,7 @@ export function Explore() {
 
             <div className="flex items-center gap-1 px-3 py-1.5 border border-accent/40 bg-accent/5 text-accent font-mono text-xs uppercase tracking-wide">
               <Calendar className="w-3.5 h-3.5 mr-1 shrink-0" />
-              {periodLabel}
+              {eraActive ? eraLabel : "Todos os tempos"}
             </div>
 
             <div className="flex items-center gap-4 ml-auto flex-wrap">
@@ -356,9 +411,8 @@ export function Explore() {
                 <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
                   {[
                     countryLabel ?? "Todos os países",
-                    genLabel     ?? "Todas as gerações",
+                    eraActive ? eraLabel : "Todos os tempos",
                     sortLabel,
-                    periodLabel,
                   ].join(" · ")}
                 </p>
               </>

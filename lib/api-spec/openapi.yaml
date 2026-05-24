@@ -153,11 +153,14 @@ paths:
           in: query
           schema:
             type: ["string", "null"]
-        - name: generation
+        - name: yearFrom
           in: query
           schema:
-            type: ["string", "null"]
-            enum: [boomer, genx, millennial, genz, alpha, null]
+            type: ["integer", "null"]
+        - name: yearTo
+          in: query
+          schema:
+            type: ["integer", "null"]
         - name: page
           in: query
           schema:

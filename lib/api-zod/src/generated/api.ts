@@ -116,7 +116,8 @@ export const browseNamesQueryLimitDefault = 20;
 export const BrowseNamesQueryParams = zod.object({
   "sort": zod.enum(['popular', 'rare', 'longest', 'shortest', 'trending', 'declining']).default(browseNamesQuerySortDefault),
   "country": zod.coerce.string().nullish(),
-  "generation": zod.union([zod.literal('boomer'),zod.literal('genx'),zod.literal('millennial'),zod.literal('genz'),zod.literal('alpha'),zod.literal(null)]).nullish(),
+  "yearFrom": zod.coerce.number().nullish(),
+  "yearTo": zod.coerce.number().nullish(),
   "page": zod.coerce.number().default(browseNamesQueryPageDefault),
   "limit": zod.coerce.number().default(browseNamesQueryLimitDefault)
 })

@@ -204,7 +204,11 @@ country?: string | null;
 /**
  * @nullable
  */
-generation?: BrowseNamesGeneration;
+yearFrom?: number | null;
+/**
+ * @nullable
+ */
+yearTo?: number | null;
 page?: number;
 limit?: number;
 };
@@ -219,17 +223,6 @@ export const BrowseNamesSort = {
   shortest: 'shortest',
   trending: 'trending',
   declining: 'declining',
-} as const;
-
-export type BrowseNamesGeneration = typeof BrowseNamesGeneration[keyof typeof BrowseNamesGeneration] | null;
-
-
-export const BrowseNamesGeneration = {
-  boomer: 'boomer',
-  genx: 'genx',
-  millennial: 'millennial',
-  genz: 'genz',
-  alpha: 'alpha',
 } as const;
 
 export type GetRareNamesParams = {
