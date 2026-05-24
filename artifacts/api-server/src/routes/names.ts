@@ -348,7 +348,7 @@ router.get("/names/:name/countries", async (req, res): Promise<void> => {
   const { rows } = await pool.query(
     `SELECT birth_country, total FROM name_regions
      WHERE LOWER(name) = LOWER($1) AND birth_country IS NOT NULL
-     ORDER BY total DESC LIMIT 10`,
+     ORDER BY total DESC LIMIT 20`,
     [nameParam]
   );
   res.json(rows.map((c: any) => ({

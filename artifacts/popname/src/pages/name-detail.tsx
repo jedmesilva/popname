@@ -1,8 +1,9 @@
 import { useGetNameDetail, getGetNameDetailQueryKey, useGetNameHistory, getGetNameHistoryQueryKey } from "@workspace/api-client-react";
 import { useParams, Link } from "wouter";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { ArrowLeft, Globe, History, Activity } from "lucide-react";
+import { ArrowLeft, Globe, History, Activity, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as Flags from "country-flag-icons/react/3x2";
 
@@ -13,6 +14,8 @@ const COUNTRY_NAMES: Record<string, string> = {
   IT: "Itália", JP: "Japão", MX: "México", NG: "Nigéria",
   PT: "Portugal", RU: "Rússia", US: "Estados Unidos", ZA: "África do Sul",
 };
+
+type CountryEntry = { country: string; countryCode: string; count: number; percentage: number };
 
 export function NameDetail() {
   const params = useParams();
@@ -25,6 +28,32 @@ export function NameDetail() {
   const { data: history, isLoading: loadingHistory } = useGetNameHistory(name, {
     query: { enabled: !!name, queryKey: getGetNameHistoryQueryKey(name) }
   });
+
+  const [allCountries, setAllCountries] = useState<CountryEntry[] | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  async function handleLoadMore() {
+    if (allCountries) {
+      setExpanded(true);
+      return;
+    }
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/names/${encodeURIComponent(name)}/countries`);
+      const data: CountryEntry[] = await res.json();
+      setAllCountries(data);
+      setExpanded(true);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  const initialCountries = detail?.topCountries ?? [];
+  const displayedCountries: CountryEntry[] = expanded && allCountries
+    ? allCountries
+    : (initialCountries as CountryEntry[]);
+  const hasMore = !expanded && (allCountries ? allCountries.length > initialCountries.length : initialCountries.length >= 5);
 
   return (
     <div className="flex-1 container mx-auto px-4 py-12">
@@ -118,11 +147,11 @@ export function NameDetail() {
                 <Globe className="w-4 h-4" /> Top Países
               </h2>
               <div className="flex-1 flex flex-col gap-6">
-                {detail.topCountries?.map((country, idx) => {
+                {displayedCountries.length > 0 ? displayedCountries.map((country, idx) => {
                   const FlagComponent = (Flags as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[country.countryCode ?? ""];
                   const countryName = COUNTRY_NAMES[country.countryCode ?? ""] ?? country.country;
                   return (
-                    <div key={country.countryCode ?? idx} className="space-y-2">
+                    <div key={`${country.countryCode}-${idx}`} className="space-y-2">
                       <div className="flex justify-between font-mono text-sm uppercase">
                         <span className="flex items-center gap-2">
                           {FlagComponent && <FlagComponent className="w-5 h-auto rounded-sm shrink-0" />}
@@ -138,13 +167,37 @@ export function NameDetail() {
                       </div>
                     </div>
                   );
-                })}
-                {!detail.topCountries?.length && (
+                }) : (
                   <div className="flex-1 flex items-center justify-center text-muted-foreground uppercase font-mono text-sm">
                     Sem dados geográficos
                   </div>
                 )}
               </div>
+
+              {(hasMore || expanded) && (
+                <div className="mt-6 pt-6 border-t border-border">
+                  {expanded ? (
+                    <button
+                      onClick={() => setExpanded(false)}
+                      className="w-full flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                      Ver menos
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="w-full flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                    >
+                      {loadingMore
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Carregando...</>
+                        : <><ChevronDown className="w-4 h-4" /> Ver mais países</>
+                      }
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           
