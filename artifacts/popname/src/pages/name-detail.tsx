@@ -7,6 +7,14 @@ import { ArrowLeft, Globe, History, Activity, ChevronDown, Loader2 } from "lucid
 import { Button } from "@/components/ui/button";
 import * as Flags from "country-flag-icons/react/3x2";
 
+function fmtPct(v: number): string {
+  const abs = Math.abs(v);
+  if (abs === 0) return "0%";
+  if (abs < 0.1) return "<0.1%";
+  if (abs < 1)   return abs.toFixed(1) + "%";
+  return Math.round(abs) + "%";
+}
+
 const COUNTRY_NAMES: Record<string, string> = {
   AR: "Argentina", AU: "Austrália", BR: "Brasil", CA: "Canadá",
   CL: "Chile", CN: "China", CO: "Colômbia", DE: "Alemanha",
@@ -219,7 +227,7 @@ export function NameDetail() {
                  <div className="text-muted-foreground text-xs font-mono uppercase mb-2">Tendência (1 Ano)</div>
                  <div className={`text-4xl font-bold font-mono ${detail.changePercent != null ? (detail.changePercent >= 0 ? 'text-accent' : 'text-destructive') : ''}`}>
                    {detail.changePercent != null
-                     ? `${detail.changePercent > 0 ? '+' : ''}${detail.changePercent}%`
+                     ? `${detail.changePercent >= 0 ? '+' : '-'}${fmtPct(detail.changePercent)}`
                      : 'N/D'}
                  </div>
                </div>

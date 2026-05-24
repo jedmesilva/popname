@@ -546,7 +546,7 @@ router.get("/names/:name", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const nameParam = Array.isArray(params.data.name) ? params.data.name[0] : params.data.name;
 
-  const [{ rows: rankRows }, { rows: meaningRows }, { rows: regionRows }, { rows: sparkRows }, { rows: trendRows }] = await Promise.all([
+  const [{ rows: rankRows }, { rows: meaningRows }, { rows: regionRows }, { rows: historyRows }] = await Promise.all([
     pool.query(
       `SELECT total_claims, rank FROM name_ranking WHERE LOWER(name) = LOWER($1)`,
       [nameParam]
@@ -563,30 +563,24 @@ router.get("/names/:name", async (req, res): Promise<void> => {
       [nameParam]
     ),
     pool.query(
-      `SELECT
-         EXTRACT(YEAR FROM registration_date)::int AS yr,
-         COUNT(*)::int AS cnt
-       FROM names
-       WHERE LOWER(name_text) = LOWER($1)
-         AND registration_date IS NOT NULL
-         AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
-       GROUP BY yr
-       ORDER BY yr`,
-      [nameParam]
-    ),
-    pool.query(
-      `SELECT
-         COUNT(*) FILTER (
-           WHERE registration_date IS NOT NULL
-             AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
-         ) AS recent,
-         COUNT(*) FILTER (
-           WHERE registration_date IS NOT NULL
-             AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 19
-             AND EXTRACT(YEAR FROM registration_date) < EXTRACT(YEAR FROM NOW()) - 9
-         ) AS older
-       FROM names
-       WHERE LOWER(name_text) = LOWER($1)`,
+      `WITH yearly_totals AS (
+         SELECT EXTRACT(YEAR FROM periodo)::int AS yr,
+                SUM(total_nome)::bigint         AS total_all
+         FROM name_history
+         GROUP BY yr
+       ),
+       name_yearly AS (
+         SELECT EXTRACT(YEAR FROM periodo)::int AS yr,
+                SUM(total_nome)::bigint         AS total_name
+         FROM name_history
+         WHERE LOWER(name_text) = LOWER($1)
+         GROUP BY yr
+       )
+       SELECT ny.yr,
+         ROUND(ny.total_name::numeric / NULLIF(yt.total_all, 0) * 100, 6)::float AS pct
+       FROM name_yearly ny
+       JOIN yearly_totals yt ON yt.yr = ny.yr
+       ORDER BY ny.yr`,
       [nameParam]
     ),
   ]);
@@ -598,6 +592,15 @@ router.get("/names/:name", async (req, res): Promise<void> => {
 
   const totalClaims = Number(rankRows[0]?.total_claims ?? 0);
   const meaning = meaningRows[0];
+
+  const spark = historyRows.map((r: any) => Number(r.pct));
+  const first = spark[0] ?? 0;
+  const last  = spark[spark.length - 1] ?? 0;
+  const changePercent = spark.length < 2
+    ? null
+    : first === 0
+      ? (last > 0 ? 100 : null)
+      : parseFloat(((last - first) / first * 100).toFixed(2));
 
   res.json({
     name: nameParam,
@@ -612,14 +615,8 @@ router.get("/names/:name", async (req, res): Promise<void> => {
       count: Number(c.total),
       percentage: totalClaims ? Math.round((Number(c.total) / totalClaims) * 100) : 0,
     })),
-    changePercent: (() => {
-      const recent = Number(trendRows[0]?.recent ?? 0);
-      const older = Number(trendRows[0]?.older ?? 0);
-      if (older === 0 && recent === 0) return null;
-      if (older === 0) return 100;
-      return Math.round(((recent - older) / older) * 100);
-    })(),
-    sparkline: sparkRows.map((s: any) => s.cnt),
+    changePercent,
+    sparkline: spark,
   });
 });
 
