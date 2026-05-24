@@ -13,7 +13,6 @@ import { Explore } from "@/pages/explore";
 import { Trends } from "@/pages/trends";
 import { Countries } from "@/pages/countries";
 import { Claim } from "@/pages/claim";
-import { Forge } from "@/pages/forge";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +33,6 @@ function Router() {
         <Route path="/tendencias" component={Trends} />
         <Route path="/paises" component={Countries} />
         <Route path="/reivindicar" component={Claim} />
-        <Route path="/criar" component={Forge} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
