@@ -412,7 +412,7 @@ function TrendRowSmall({
 }: {
   name: string;
   rank: number;
-  change: number;
+  change: number | null;
   sparkline: number[];
   rising: boolean;
 }) {
@@ -448,7 +448,7 @@ function TrendRowSmall({
           rising ? "text-accent" : "text-destructive"
         }`}
       >
-        {change > 0 ? "+" : ""}{change}%
+        {change === null ? "—" : `${change > 0 ? "+" : ""}${change}%`}
       </span>
     </Link>
   );

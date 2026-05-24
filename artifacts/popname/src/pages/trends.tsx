@@ -106,7 +106,7 @@ function TrendRow({ item, rank, isDeclining = false }: { item: any; rank: number
         )}
       </div>
       <div className={`font-mono text-sm font-bold w-20 text-right ${isDeclining ? 'text-destructive' : 'text-accent'}`}>
-        {item.changePercent > 0 ? '+' : ''}{item.changePercent}%
+        {item.changePercent === null ? "—" : `${item.changePercent > 0 ? "+" : ""}${item.changePercent}%`}
       </div>
     </Link>
   );
