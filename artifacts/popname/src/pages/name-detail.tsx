@@ -148,10 +148,10 @@ export function NameDetail() {
                       <Line
                         type="monotone"
                         dataKey="pct"
-                        stroke="hsl(var(--accent))"
+                        stroke={detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))"}
                         strokeWidth={2}
-                        dot={{ r: 3, fill: "hsl(var(--accent))" }}
-                        activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
+                        dot={{ r: 3, fill: detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))" }}
+                        activeDot={{ r: 6, fill: detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))" }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -304,7 +304,11 @@ export function NameDetail() {
                     />
                     <Bar dataKey="count" radius={[2, 2, 0, 0]} maxBarSize={48}>
                       {(registrations ?? []).map((_: any, i: number) => (
-                        <Cell key={i} fill="hsl(var(--accent))" fillOpacity={0.85} />
+                        <Cell
+                          key={i}
+                          fill={detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))"}
+                          fillOpacity={0.85}
+                        />
                       ))}
                     </Bar>
                   </BarChart>
