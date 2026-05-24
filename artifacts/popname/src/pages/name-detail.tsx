@@ -1,9 +1,10 @@
 import { useGetNameDetail, getGetNameDetailQueryKey, useGetNameHistory, getGetNameHistoryQueryKey } from "@workspace/api-client-react";
 import { useParams } from "wouter";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { ArrowLeft, Globe, History, Activity, ChevronDown, Loader2 } from "lucide-react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from "recharts";
+import { ArrowLeft, Globe, History, Activity, ChevronDown, Loader2, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as Flags from "country-flag-icons/react/3x2";
 
@@ -35,6 +36,13 @@ export function NameDetail() {
 
   const { data: history, isLoading: loadingHistory } = useGetNameHistory(name, {
     query: { enabled: !!name, queryKey: getGetNameHistoryQueryKey(name) }
+  });
+
+  const [granularity, setGranularity] = useState<string>("monthly");
+  const { data: registrations, isLoading: loadingReg } = useQuery<{ period: string; label: string; count: number }[]>({
+    queryKey: ["registrations", name, granularity],
+    queryFn: () => fetch(`/api/names/${encodeURIComponent(name)}/registrations?granularity=${granularity}`).then(r => r.json()),
+    enabled: !!name,
   });
 
   const PAGE_SIZE = 10;
@@ -235,6 +243,80 @@ export function NameDetail() {
                </div>
              </div>
           </div>
+
+          {/* Registros por período */}
+          <div className="border border-border p-8 bg-card">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <BarChart2 className="w-4 h-4" /> Registros por Período
+              </h2>
+              <div className="flex flex-wrap gap-1">
+                {([
+                  ["daily",   "Diário"],
+                  ["weekly",  "Semanal"],
+                  ["monthly", "Mensal"],
+                  ["annual",  "Anual"],
+                  ["decade",  "Década"],
+                  ["century", "Século"],
+                ] as [string, string][]).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setGranularity(key)}
+                    className={`px-3 py-1 font-mono text-xs uppercase tracking-widest border transition-colors ${
+                      granularity === key
+                        ? "border-accent text-accent bg-accent/10"
+                        : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-[260px] w-full">
+              {loadingReg ? (
+                <Skeleton className="w-full h-full" />
+              ) : registrations && registrations.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={registrations} margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
+                    <XAxis
+                      dataKey="label"
+                      stroke="#888"
+                      tick={{ fill: '#888', fontSize: 11, fontFamily: 'monospace' }}
+                      axisLine={false}
+                      tickLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      stroke="#888"
+                      tick={{ fill: '#888', fontSize: 11, fontFamily: 'monospace' }}
+                      axisLine={false}
+                      tickLine={false}
+                      allowDecimals={false}
+                      width={32}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', fontFamily: 'monospace', textTransform: 'uppercase', fontSize: 12 }}
+                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                      formatter={(v: any) => [v, "Registros"]}
+                      labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <Bar dataKey="count" radius={[2, 2, 0, 0]} maxBarSize={48}>
+                      {(registrations ?? []).map((_: any, i: number) => (
+                        <Cell key={i} fill="hsl(var(--accent))" fillOpacity={0.85} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground uppercase font-mono text-sm">
+                  Sem registros neste período
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       ) : (
         <div className="text-center py-20 font-mono uppercase text-muted-foreground">

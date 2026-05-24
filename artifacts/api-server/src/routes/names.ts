@@ -490,6 +490,76 @@ router.get("/names/by-country", async (_req, res): Promise<void> => {
   })));
 });
 
+// GET /names/:name/registrations?granularity=daily|weekly|monthly|annual|decade|century
+router.get("/names/:name/registrations", async (req, res): Promise<void> => {
+  const nameParam = (req.params as any).name as string;
+  if (!nameParam) { res.status(400).json({ error: "Name required" }); return; }
+
+  const granularity = (req.query.granularity as string) || "monthly";
+  const valid = ["daily", "weekly", "monthly", "annual", "decade", "century"];
+  if (!valid.includes(granularity)) { res.status(400).json({ error: "Invalid granularity" }); return; }
+
+  // date_col = COALESCE(registration_date, claimed_at::date) to capture all records
+  const dateCol = `COALESCE(registration_date, claimed_at::date)`;
+
+  // bucket expr (applied to CTE col `d`), label expr (applied to already-bucketed col `grp`)
+  let bucketExpr: string;
+  let labelFromGrp: string;
+
+  switch (granularity) {
+    case "daily":
+      bucketExpr   = `DATE_TRUNC('day',   d)::date`;
+      labelFromGrp = `TO_CHAR(grp, 'DD/MM/YYYY')`;
+      break;
+    case "weekly":
+      bucketExpr   = `DATE_TRUNC('week',  d)::date`;
+      labelFromGrp = `TO_CHAR(grp, 'DD/MM/YYYY')`;
+      break;
+    case "monthly":
+      bucketExpr   = `DATE_TRUNC('month', d)::date`;
+      labelFromGrp = `TO_CHAR(grp, 'Mon/YYYY')`;
+      break;
+    case "annual":
+      bucketExpr   = `DATE_TRUNC('year',  d)::date`;
+      labelFromGrp = `TO_CHAR(grp, 'YYYY')`;
+      break;
+    case "decade":
+      bucketExpr   = `(EXTRACT(YEAR FROM d)::int / 10 * 10)`;
+      labelFromGrp = `CONCAT(grp::text, 's')`;
+      break;
+    default: // century
+      bucketExpr   = `(EXTRACT(YEAR FROM d)::int / 100 * 100)`;
+      labelFromGrp = `CONCAT('Séc. ', LPAD(((grp::int / 100) + 1)::text, 2, '0'))`;
+      break;
+  }
+
+  const { rows } = await pool.query(
+    `WITH src AS (
+       SELECT ${dateCol} AS d
+       FROM names
+       WHERE LOWER(name_text) = LOWER($1)
+         AND ${dateCol} IS NOT NULL
+     ),
+     bucketed AS (
+       SELECT ${bucketExpr} AS grp FROM src
+     )
+     SELECT
+       grp            AS period,
+       ${labelFromGrp} AS label,
+       COUNT(*)::int  AS count
+     FROM bucketed
+     GROUP BY grp
+     ORDER BY grp`,
+    [nameParam]
+  );
+
+  res.json(rows.map((r: any) => ({
+    period: String(r.period),
+    label:  String(r.label),
+    count:  Number(r.count),
+  })));
+});
+
 router.get("/names/:name/history", async (req, res): Promise<void> => {
   const params = GetNameHistoryParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
