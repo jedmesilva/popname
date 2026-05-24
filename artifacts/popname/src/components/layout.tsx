@@ -6,7 +6,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
 
   const navLinks = [
-    { href: "/explorar", label: "EXPLORAR" },
+    { href: "/", label: "INÍCIO" },
+    { href: "/explorar", label: "ÍNDICE" },
     { href: "/tendencias", label: "TENDÊNCIAS" },
     { href: "/paises", label: "PAÍSES" },
     { href: "/criar", label: "CRIAR" },
