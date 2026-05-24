@@ -11,7 +11,7 @@ import {
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { ArrowUpRight, TrendingUp, TrendingDown, Search } from "lucide-react";
+import { ArrowUpRight, TrendingUp, Search } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 
 export function Home() {
@@ -216,79 +216,39 @@ export function Home() {
         </section>
       )}
 
-      {/* Trending & Declining */}
+      {/* Trending */}
       <section className="py-16 border-b border-border">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Trending */}
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-bold uppercase tracking-tighter flex items-center gap-3">
-                    <TrendingUp className="w-5 h-5 text-accent" />
-                    Nomes em Ascensão
-                  </h2>
-                  <p className="text-muted-foreground text-sm font-mono mt-1">
-                    Últimos 12 meses
-                  </p>
-                </div>
-                <Link
-                  href="/tendencias"
-                  className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
-                >
-                  Ver todos <ArrowUpRight className="w-3 h-3" />
-                </Link>
-              </div>
-              <div className="space-y-1">
-                {loadingTrending
-                  ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-                  : Array.isArray(trending) && trending.map((item, idx) => (
-                    <TrendRowSmall
-                      key={item.name}
-                      name={item.name}
-                      rank={idx + 1}
-                      change={item.changePercent}
-                      sparkline={item.sparkline ?? []}
-                      rising
-                    />
-                  ))}
-              </div>
+              <h2 className="text-2xl font-bold uppercase tracking-tighter flex items-center gap-3">
+                <TrendingUp className="w-5 h-5 text-accent" />
+                Nomes em Ascensão
+              </h2>
+              <p className="text-muted-foreground text-sm font-mono mt-1">
+                Últimos 12 meses
+              </p>
             </div>
-
-            {/* Declining */}
-            <div>
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-bold uppercase tracking-tighter flex items-center gap-3">
-                    <TrendingDown className="w-5 h-5 text-destructive" />
-                    Nomes em Queda
-                  </h2>
-                  <p className="text-muted-foreground text-sm font-mono mt-1">
-                    Últimos 5 anos
-                  </p>
-                </div>
-                <Link
-                  href="/tendencias"
-                  className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
-                >
-                  Ver todos <ArrowUpRight className="w-3 h-3" />
-                </Link>
-              </div>
-              <div className="space-y-1">
-                {loadingDeclining
-                  ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-                  : Array.isArray(declining) && declining.map((item, idx) => (
-                    <TrendRowSmall
-                      key={item.name}
-                      name={item.name}
-                      rank={idx + 1}
-                      change={item.changePercent}
-                      sparkline={item.sparkline ?? []}
-                      rising={false}
-                    />
-                  ))}
-              </div>
-            </div>
+            <Link
+              href="/tendencias"
+              className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
+            >
+              Ver todos <ArrowUpRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="space-y-1">
+            {loadingTrending
+              ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
+              : Array.isArray(trending) && trending.map((item, idx) => (
+                <TrendRowSmall
+                  key={item.name}
+                  name={item.name}
+                  rank={idx + 1}
+                  change={item.changePercent}
+                  sparkline={item.sparkline ?? []}
+                  rising
+                />
+              ))}
           </div>
         </div>
       </section>
