@@ -15,11 +15,54 @@ import {
 
 const router: IRouter = Router();
 
-function buildSparkline(prev: number, curr: number, points = 6): number[] {
-  return Array.from({ length: points }, (_, i) => {
-    const t = i / (points - 1);
-    return prev + (curr - prev) * t;
-  });
+async function fetchRealSparklines(
+  nameList: string[]
+): Promise<Map<string, number[]>> {
+  if (nameList.length === 0) return new Map();
+
+  const currentYear = new Date().getFullYear();
+
+  // Get global date range so sparkline covers all available history
+  const { rows: rangeRows } = await pool.query(
+    `SELECT
+       MIN(EXTRACT(YEAR FROM registration_date))::int AS min_yr,
+       MAX(EXTRACT(YEAR FROM registration_date))::int AS max_yr
+     FROM names
+     WHERE registration_date IS NOT NULL`
+  );
+  const sparkYearFrom = rangeRows[0]?.min_yr ?? currentYear - 9;
+  const sparkYearTo   = rangeRows[0]?.max_yr ?? currentYear;
+  const rangeYears    = Math.max(sparkYearTo - sparkYearFrom + 1, 1);
+  const bucketSize    = Math.max(1, Math.ceil(rangeYears / 10));
+  const numBuckets    = Math.ceil(rangeYears / bucketSize);
+
+  const { rows } = await pool.query(
+    `SELECT
+       LOWER(name_text) AS name_lower,
+       FLOOR((EXTRACT(YEAR FROM registration_date) - $2) / $3)::int AS bucket,
+       COUNT(*)::int AS cnt
+     FROM names
+     WHERE LOWER(name_text) = ANY($1::text[])
+       AND registration_date IS NOT NULL
+       AND EXTRACT(YEAR FROM registration_date) BETWEEN $2 AND $4
+     GROUP BY name_lower, bucket
+     ORDER BY name_lower, bucket`,
+    [nameList.map(n => n.toLowerCase()), sparkYearFrom, bucketSize, sparkYearTo]
+  );
+
+  const sparkMap = new Map<string, number[]>();
+  for (const name of nameList) {
+    sparkMap.set(name.toLowerCase(), Array(numBuckets).fill(0));
+  }
+  for (const r of rows) {
+    const key = r.name_lower as string;
+    const b   = Number(r.bucket);
+    if (b >= 0 && b < numBuckets) {
+      const arr = sparkMap.get(key);
+      if (arr) arr[b] = Number(r.cnt);
+    }
+  }
+  return sparkMap;
 }
 
 // GET /names/search
@@ -139,18 +182,17 @@ router.get("/names/trending", async (req, res): Promise<void> => {
     [limit]
   );
 
-  res.json(rows.map((r: any) => {
-    const prev = Number(r.previous_count);
-    const curr = Number(r.current_count);
-    return {
-      name: r.name,
-      count: curr,
-      countries: Number(r.country_count),
-      changePercent: r.growth_percent !== null ? Number(r.growth_percent) : null,
-      trend: "rising" as const,
-      sparkline: buildSparkline(prev, curr),
-    };
-  }));
+  const nameList   = rows.map((r: any) => r.name as string);
+  const sparkMap   = await fetchRealSparklines(nameList);
+
+  res.json(rows.map((r: any) => ({
+    name: r.name,
+    count: Number(r.current_count),
+    countries: Number(r.country_count),
+    changePercent: r.growth_percent !== null ? Number(r.growth_percent) : null,
+    trend: "rising" as const,
+    sparkline: sparkMap.get((r.name as string).toLowerCase()) ?? [],
+  })));
 });
 
 // GET /names/declining
@@ -198,18 +240,17 @@ router.get("/names/declining", async (req, res): Promise<void> => {
     [limit]
   );
 
-  res.json(rows.map((r: any) => {
-    const prev = Number(r.previous_count);
-    const curr = Number(r.current_count);
-    return {
-      name: r.name,
-      count: curr,
-      countries: Number(r.country_count),
-      changePercent: r.decline_percent !== null ? Number(r.decline_percent) : null,
-      trend: "falling" as const,
-      sparkline: buildSparkline(prev, curr),
-    };
-  }));
+  const nameList = rows.map((r: any) => r.name as string);
+  const sparkMap = await fetchRealSparklines(nameList);
+
+  res.json(rows.map((r: any) => ({
+    name: r.name,
+    count: Number(r.current_count),
+    countries: Number(r.country_count),
+    changePercent: r.decline_percent !== null ? Number(r.decline_percent) : null,
+    trend: "falling" as const,
+    sparkline: sparkMap.get((r.name as string).toLowerCase()) ?? [],
+  })));
 });
 
 // GET /names/browse
