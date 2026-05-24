@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import {
   useGetNamesByDecade, getGetNamesByDecadeQueryKey,
-  useGetRareNames, getGetRareNamesQueryKey,
   useBrowseNames,
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,7 +33,7 @@ const GENERATIONS = [
 type GenerationKey = typeof GENERATIONS[number]["key"];
 
 
-const TABS = ["NAVEGAR", "GERAÇÕES", "LINHA DO TEMPO", "RAROS"] as const;
+const TABS = ["NAVEGAR", "GERAÇÕES", "LINHA DO TEMPO"] as const;
 type Tab = typeof TABS[number];
 
 // ─── Flag helper ─────────────────────────────────────────────────────────────
@@ -84,7 +83,6 @@ export function Explore() {
         {tab === "NAVEGAR"        && <BrowseTab />}
         {tab === "GERAÇÕES"       && <GenerationsTab />}
         {tab === "LINHA DO TEMPO" && <TimelineTab />}
-        {tab === "RAROS"          && <RareTab />}
       </div>
     </div>
   );
@@ -359,54 +357,3 @@ function TimelineTab() {
   );
 }
 
-// ─── Rare Tab ─────────────────────────────────────────────────────────────────
-
-function RareTab() {
-  const { data: rare, isLoading } = useGetRareNames(
-    { limit: 30 },
-    { query: { queryKey: getGetRareNamesQueryKey({ limit: 30 }) } }
-  );
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-1">
-            Os mais exclusivos do índice
-          </p>
-          <h2 className="text-2xl font-bold uppercase tracking-tighter">Nomes Raros</h2>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground text-right">
-          <div className="text-2xl font-bold text-foreground">{rare?.length ?? 0}</div>
-          nomes carregados
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {isLoading
-          ? Array(12).fill(0).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
-          : rare?.map((name, i) => (
-            <Link
-              key={name.name}
-              href={`/nome/${name.name}`}
-              className="border border-border p-5 hover:border-accent transition-colors group flex items-center gap-5"
-            >
-              <span className="font-mono text-2xl font-bold text-muted-foreground/30 w-8 shrink-0">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-xl font-bold uppercase group-hover:text-accent transition-colors truncate">
-                  {name.name}
-                </div>
-                <div className="text-xs text-muted-foreground font-mono mt-1 uppercase tracking-widest">
-                  {name.count === 1 ? "Única pessoa" : `Apenas ${name.count} pessoas`} · {name.countries} {name.countries === 1 ? "país" : "países"}
-                </div>
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-accent transition-colors shrink-0" />
-            </Link>
-          ))
-        }
-      </div>
-    </div>
-  );
-}
