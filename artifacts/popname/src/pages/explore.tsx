@@ -11,6 +11,14 @@ import { CountryPicker, ALL_COUNTRIES } from "@/components/country-picker";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+function fmtPct(v: number): string {
+  const abs = Math.abs(v);
+  if (abs === 0) return "0%";
+  if (abs < 0.1) return "<0.1%";
+  if (abs < 1)   return abs.toFixed(1) + "%";
+  return Math.round(abs) + "%";
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BrowseItem {
@@ -107,7 +115,7 @@ function NameCard({ name, count, countries, sort, changePercent, sparkline, card
           <div className="text-right shrink-0">
             <div className={`flex items-center gap-0.5 justify-end font-bold text-sm ${trendCls}`}>
               <TIcon className="w-3.5 h-3.5" />
-              {rising ? "+" : ""}{Math.abs(changePercent!).toFixed(0)}%
+              {(changePercent! >= 0 ? "+" : "-")}{fmtPct(changePercent!)}
             </div>
             <div className="font-mono text-[9px] text-muted-foreground whitespace-nowrap mt-0.5">
               variação histórica
@@ -486,7 +494,7 @@ export function Explore() {
                     {cp != null && (
                       <span className={`flex items-center gap-0.5 font-bold text-sm ${trendCls} w-20 shrink-0`}>
                         <TIcon className="w-3.5 h-3.5" />
-                        {rising ? "+" : ""}{Math.abs(cp).toFixed(0)}%
+                        {(cp >= 0 ? "+" : "-")}{fmtPct(cp)}
                       </span>
                     )}
                     <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground w-36 shrink-0">

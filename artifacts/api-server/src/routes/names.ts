@@ -367,7 +367,7 @@ router.get("/names/browse", async (req, res): Promise<void> => {
     const first = spark[0];
     const last  = spark[spark.length - 1];
     if (first === 0) { trendMap.set(key, last > 0 ? 100 : null); continue; }
-    trendMap.set(key, Math.round(((last - first) / first) * 100));
+    trendMap.set(key, parseFloat(((last - first) / first * 100).toFixed(2)));
   }
 
   res.json({
