@@ -307,10 +307,26 @@ router.get("/names/browse", async (req, res): Promise<void> => {
 
   const nameList = rows.map((r: any) => r.name as string);
 
-  // Determine the sparkline range from the active period filter
-  const currentYear    = new Date().getFullYear();
-  const sparkYearFrom  = yearFrom ?? currentYear - 9;
-  const sparkYearTo    = yearTo   ?? currentYear;
+  // Determine the sparkline range from the active period filter.
+  // When no filter is set, use the actual min/max registration year in the DB.
+  const currentYear = new Date().getFullYear();
+  let sparkYearFrom: number;
+  let sparkYearTo: number;
+
+  if (yearFrom != null || yearTo != null) {
+    sparkYearFrom = yearFrom ?? currentYear - 9;
+    sparkYearTo   = yearTo   ?? currentYear;
+  } else {
+    const { rows: rangeRows } = await pool.query(
+      `SELECT
+         MIN(EXTRACT(YEAR FROM registration_date))::int AS min_yr,
+         MAX(EXTRACT(YEAR FROM registration_date))::int AS max_yr
+       FROM names
+       WHERE registration_date IS NOT NULL`
+    );
+    sparkYearFrom = rangeRows[0]?.min_yr ?? currentYear - 9;
+    sparkYearTo   = rangeRows[0]?.max_yr ?? currentYear;
+  }
   const rangeYears     = Math.max(sparkYearTo - sparkYearFrom + 1, 1);
 
   // Bucket into ~10 points regardless of how wide the range is
