@@ -157,7 +157,7 @@ export function Home() {
                   className="text-6xl md:text-8xl font-bold tracking-tighter mb-4"
                   data-testid="text-featured-name"
                 >
-                  {featured.name.toUpperCase()}
+                  {featured.name?.toUpperCase()}
                 </h2>
                 <div className="flex items-center gap-6 text-muted-foreground font-mono text-sm mb-4">
                   <span>{(featured.count).toLocaleString("pt-BR")} pessoas</span>
@@ -181,7 +181,7 @@ export function Home() {
                   Top países
                 </p>
                 <div className="space-y-3">
-                  {featured.topCountries.slice(0, 5).map((c) => (
+                  {featured.topCountries?.slice(0, 5).map((c) => (
                     <div key={c.countryCode} className="flex items-center gap-4">
                       <div className="w-32 font-mono text-sm truncate">{c.country}</div>
                       <div className="flex-1 h-1 bg-border rounded-full">
@@ -228,7 +228,7 @@ export function Home() {
               <div className="space-y-1">
                 {loadingTrending
                   ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-                  : trending?.map((item, idx) => (
+                  : Array.isArray(trending) && trending.map((item, idx) => (
                     <TrendRowSmall
                       key={item.name}
                       name={item.name}
@@ -263,7 +263,7 @@ export function Home() {
               <div className="space-y-1">
                 {loadingDeclining
                   ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
-                  : declining?.map((item, idx) => (
+                  : Array.isArray(declining) && declining.map((item, idx) => (
                     <TrendRowSmall
                       key={item.name}
                       name={item.name}
