@@ -54,54 +54,54 @@ export function Home() {
   return (
     <div className="flex-1 flex flex-col">
       {/* Hero */}
-      <section className="py-24 md:py-32 border-b border-border">
+      <section className="py-16 md:py-32 border-b border-border overflow-hidden">
         <div className="container mx-auto px-4 max-w-5xl text-center">
-          <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-6">
+          <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-4 md:mb-6">
             Human Name Index
           </p>
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-6 leading-tight">
-            O ÍNDICE DE NOMES DA<br />
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-4 md:mb-6 leading-tight">
+            O ÍNDICE DE NOMES DA{" "}
             <span className="text-muted-foreground">CIVILIZAÇÃO HUMANA.</span>
           </h1>
-          <p className="text-muted-foreground font-mono text-sm mb-12">
+          <p className="text-muted-foreground font-mono text-xs md:text-sm mb-8 md:mb-12">
             Dados reais. Tendências globais. A história do seu nome, revelada.
           </p>
 
-          <div className="my-10">
+          <div className="my-8 md:my-10">
             {loadingStats ? (
-              <Skeleton className="h-28 w-80 mx-auto" />
+              <Skeleton className="h-20 w-64 mx-auto" />
             ) : (
               <div
-                className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-accent tabular-nums"
+                className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-accent tabular-nums leading-none"
                 data-testid="stat-total-names"
               >
                 {(4381229047).toLocaleString("pt-BR")}
               </div>
             )}
-            <div className="text-sm text-muted-foreground mt-4 uppercase tracking-widest font-mono">
+            <div className="text-xs md:text-sm text-muted-foreground mt-3 md:mt-4 uppercase tracking-widest font-mono">
               Nomes indexados
             </div>
           </div>
 
-          <div className="flex items-center gap-8 justify-center mb-12 text-sm font-mono text-muted-foreground">
-            <span>
-              <span className="text-foreground font-bold mr-2">
+          <div className="grid grid-cols-3 gap-2 md:flex md:items-center md:gap-8 justify-center mb-8 md:mb-12 text-xs md:text-sm font-mono text-muted-foreground max-w-sm md:max-w-none mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+              <span className="text-foreground font-bold">
                 {stats?.countriesCovered ?? 195}
               </span>
-              PAÍSES
-            </span>
-            <span className="w-px h-4 bg-border" />
-            <span>
-              <span className="text-foreground font-bold mr-2">1,2B+</span>
-              PESSOAS
-            </span>
-            <span className="w-px h-4 bg-border" />
-            <span>
-              <span className="text-accent font-bold mr-2">
+              <span>PAÍSES</span>
+            </div>
+            <span className="hidden md:block w-px h-4 bg-border" />
+            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+              <span className="text-foreground font-bold">1,2B+</span>
+              <span>PESSOAS</span>
+            </div>
+            <span className="hidden md:block w-px h-4 bg-border" />
+            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+              <span className="text-accent font-bold">
                 +{(stats?.dailyGrowth ?? 12481).toLocaleString("pt-BR")}
               </span>
-              HOJE
-            </span>
+              <span>HOJE</span>
+            </div>
           </div>
 
           <form onSubmit={handleSearch} className="max-w-xl mx-auto flex gap-0">
@@ -113,13 +113,13 @@ export function Home() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 data-testid="input-search-name"
-                className="w-full h-14 bg-transparent border border-border pl-12 pr-4 outline-none focus:border-accent transition-all font-mono"
+                className="w-full h-12 md:h-14 bg-transparent border border-border pl-12 pr-4 outline-none focus:border-accent transition-all font-mono text-sm"
               />
             </div>
             <button
               type="submit"
               data-testid="button-search"
-              className="h-14 px-8 bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors uppercase tracking-widest font-mono"
+              className="h-12 md:h-14 px-5 md:px-8 bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors uppercase tracking-widest font-mono text-xs md:text-sm"
             >
               Buscar
             </button>
