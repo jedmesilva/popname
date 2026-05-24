@@ -448,9 +448,7 @@ function TrendRowSmall({
           rising ? "text-accent" : "text-destructive"
         }`}
       >
-        {change === null
-          ? (rising ? "+∞" : "—")
-          : `${change > 0 ? "+" : ""}${change}%`}
+        {change === null ? "—" : `${change > 0 ? "+" : ""}${change}%`}
       </span>
     </Link>
   );

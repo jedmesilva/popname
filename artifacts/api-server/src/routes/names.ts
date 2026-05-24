@@ -107,7 +107,7 @@ router.get("/names/trending", async (req, res): Promise<void> => {
             COALESCE(cp.current_count, 0) AS current_count,
             COALESCE(pp.previous_count, 0) AS previous_count,
             COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0) AS absolute_growth,
-            CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN NULL
+            CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN 100
                  ELSE ROUND(
                    (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
                    / COALESCE(pp.previous_count, 1)::numeric * 100, 2
