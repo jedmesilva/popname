@@ -15,6 +15,13 @@ import {
 
 const router: IRouter = Router();
 
+function buildSparkline(prev: number, curr: number, points = 6): number[] {
+  return Array.from({ length: points }, (_, i) => {
+    const t = i / (points - 1);
+    return prev + (curr - prev) * t;
+  });
+}
+
 // GET /names/search
 router.get("/names/search", async (req, res): Promise<void> => {
   const parsed = SearchNamesQueryParams.safeParse(req.query);
@@ -129,26 +136,18 @@ router.get("/names/trending", async (req, res): Promise<void> => {
     [limit]
   );
 
-  const result = await Promise.all(rows.map(async (r: any) => {
-    const { rows: spark } = await pool.query(
-      `SELECT COUNT(*)::int AS cnt
-       FROM names
-       WHERE LOWER(name_text) = LOWER($1) AND status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '${interval}'
-       GROUP BY DATE_TRUNC('month', verified_at)
-       ORDER BY DATE_TRUNC('month', verified_at)`,
-      [r.name]
-    );
+  res.json(rows.map((r: any) => {
+    const prev = Number(r.previous_count);
+    const curr = Number(r.current_count);
     return {
       name: r.name,
-      count: Number(r.current_count),
+      count: curr,
       countries: Number(r.country_count),
       changePercent: r.growth_percent !== null ? Number(r.growth_percent) : null,
       trend: "rising" as const,
-      sparkline: spark.map((s: any) => s.cnt),
+      sparkline: buildSparkline(prev, curr),
     };
   }));
-  res.json(result);
 });
 
 // GET /names/declining
@@ -172,25 +171,18 @@ router.get("/names/declining", async (req, res): Promise<void> => {
     [limit]
   );
 
-  const result = await Promise.all(rows.map(async (r: any) => {
-    const { rows: spark } = await pool.query(
-      `SELECT COUNT(*)::int AS cnt
-       FROM names
-       WHERE LOWER(name_text) = LOWER($1) AND status = 'verified'
-       GROUP BY DATE_TRUNC('month', verified_at)
-       ORDER BY DATE_TRUNC('month', verified_at)`,
-      [r.name]
-    );
+  res.json(rows.map((r: any) => {
+    const prev = Number(r.previous_count);
+    const curr = Number(r.current_count);
     return {
       name: r.name,
-      count: Number(r.current_count),
+      count: curr,
       countries: Number(r.country_count),
       changePercent: r.decline_percent !== null ? Number(r.decline_percent) : null,
       trend: "falling" as const,
-      sparkline: spark.map((s: any) => s.cnt),
+      sparkline: buildSparkline(prev, curr),
     };
   }));
-  res.json(result);
 });
 
 // GET /names/browse
