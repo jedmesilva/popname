@@ -257,25 +257,30 @@ router.get("/names/browse", async (req, res): Promise<void> => {
     pool.query(
       `SELECT
          LOWER(name_text) AS name_lower,
-         DATE_TRUNC('month', verified_at) AS month,
+         EXTRACT(YEAR FROM registration_date)::int AS yr,
          COUNT(*)::int AS cnt
        FROM names
        WHERE LOWER(name_text) = ANY($1::text[])
-         AND status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '10 months'
-       GROUP BY name_lower, month
-       ORDER BY name_lower, month`,
+         AND registration_date IS NOT NULL
+         AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
+       GROUP BY name_lower, yr
+       ORDER BY name_lower, yr`,
       [nameList.map((n: string) => n.toLowerCase())]
     ),
     pool.query(
       `SELECT
          LOWER(name_text) AS name_lower,
-         COUNT(*) FILTER (WHERE verified_at >= NOW() - INTERVAL '1 year')::int AS recent,
-         COUNT(*) FILTER (WHERE verified_at < NOW() - INTERVAL '1 year')::int AS older
+         COUNT(*) FILTER (
+           WHERE registration_date IS NOT NULL
+             AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
+         )::int AS recent,
+         COUNT(*) FILTER (
+           WHERE registration_date IS NOT NULL
+             AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 19
+             AND EXTRACT(YEAR FROM registration_date) < EXTRACT(YEAR FROM NOW()) - 9
+         )::int AS older
        FROM names
        WHERE LOWER(name_text) = ANY($1::text[])
-         AND status = 'verified'
-         AND verified_at IS NOT NULL
        GROUP BY name_lower`,
       [nameList.map((n: string) => n.toLowerCase())]
     ),
