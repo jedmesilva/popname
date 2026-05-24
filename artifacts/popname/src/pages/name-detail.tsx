@@ -1,5 +1,5 @@
 import { useGetNameDetail, getGetNameDetailQueryKey, useGetNameHistory, getGetNameHistoryQueryKey } from "@workspace/api-client-react";
-import { useParams, Link } from "wouter";
+import { useParams } from "wouter";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
@@ -58,12 +58,14 @@ export function NameDetail() {
 
   return (
     <div className="flex-1 container mx-auto px-4 py-12">
-      <Link href="/">
-        <Button variant="ghost" className="mb-8 font-mono uppercase tracking-widest text-xs">
-          <ArrowLeft className="mr-2 w-4 h-4" />
-          Voltar
-        </Button>
-      </Link>
+      <Button
+        variant="ghost"
+        className="mb-8 font-mono uppercase tracking-widest text-xs"
+        onClick={() => window.history.back()}
+      >
+        <ArrowLeft className="mr-2 w-4 h-4" />
+        Voltar
+      </Button>
 
       {loadingDetail ? (
         <div className="space-y-8">
