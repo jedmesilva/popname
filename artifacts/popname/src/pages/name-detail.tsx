@@ -148,10 +148,10 @@ export function NameDetail() {
                       <Line
                         type="monotone"
                         dataKey="pct"
-                        stroke={detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))"}
+                        stroke="hsl(var(--accent))"
                         strokeWidth={2}
-                        dot={{ r: 3, fill: detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))" }}
-                        activeDot={{ r: 6, fill: detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))" }}
+                        dot={{ r: 3, fill: "hsl(var(--accent))" }}
+                        activeDot={{ r: 6, fill: "hsl(var(--accent))" }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -306,7 +306,7 @@ export function NameDetail() {
                       {(registrations ?? []).map((_: any, i: number) => (
                         <Cell
                           key={i}
-                          fill={detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))"}
+                          fill="hsl(var(--accent))"
                           fillOpacity={0.85}
                         />
                       ))}
