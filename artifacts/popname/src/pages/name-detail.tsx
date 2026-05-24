@@ -164,9 +164,11 @@ export function NameDetail() {
                  <div className="text-4xl font-bold font-mono">{detail.countries} Países</div>
                </div>
                <div>
-                 <div className="text-muted-foreground text-xs font-mono uppercase mb-2">Tendência (5 Anos)</div>
-                 <div className={`text-4xl font-bold font-mono ${detail.changePercent && detail.changePercent > 0 ? 'text-accent' : 'text-destructive'}`}>
-                   {detail.changePercent ? `${detail.changePercent > 0 ? '+' : ''}${detail.changePercent}%` : 'N/D'}
+                 <div className="text-muted-foreground text-xs font-mono uppercase mb-2">Tendência (1 Ano)</div>
+                 <div className={`text-4xl font-bold font-mono ${detail.changePercent != null ? (detail.changePercent >= 0 ? 'text-accent' : 'text-destructive') : ''}`}>
+                   {detail.changePercent != null
+                     ? `${detail.changePercent > 0 ? '+' : ''}${detail.changePercent}%`
+                     : 'N/D'}
                  </div>
                </div>
              </div>

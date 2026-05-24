@@ -365,7 +365,7 @@ router.get("/names/:name", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const nameParam = Array.isArray(params.data.name) ? params.data.name[0] : params.data.name;
 
-  const [{ rows: rankRows }, { rows: meaningRows }, { rows: regionRows }, { rows: sparkRows }] = await Promise.all([
+  const [{ rows: rankRows }, { rows: meaningRows }, { rows: regionRows }, { rows: sparkRows }, { rows: trendRows }] = await Promise.all([
     pool.query(
       `SELECT total_claims, rank FROM name_ranking WHERE LOWER(name) = LOWER($1)`,
       [nameParam]
@@ -388,6 +388,14 @@ router.get("/names/:name", async (req, res): Promise<void> => {
          AND verified_at >= NOW() - INTERVAL '10 months'
        GROUP BY DATE_TRUNC('month', verified_at)
        ORDER BY DATE_TRUNC('month', verified_at)`,
+      [nameParam]
+    ),
+    pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE verified_at >= NOW() - INTERVAL '1 year') AS recent,
+         COUNT(*) FILTER (WHERE verified_at < NOW() - INTERVAL '1 year') AS older
+       FROM names
+       WHERE LOWER(name_text) = LOWER($1) AND status = 'verified' AND verified_at IS NOT NULL`,
       [nameParam]
     ),
   ]);
@@ -413,7 +421,13 @@ router.get("/names/:name", async (req, res): Promise<void> => {
       count: Number(c.total),
       percentage: totalClaims ? Math.round((Number(c.total) / totalClaims) * 100) : 0,
     })),
-    changePercent: null,
+    changePercent: (() => {
+      const recent = Number(trendRows[0]?.recent ?? 0);
+      const older = Number(trendRows[0]?.older ?? 0);
+      if (older === 0 && recent === 0) return null;
+      if (older === 0) return 100;
+      return Math.round(((recent - older) / older) * 100);
+    })(),
     sparkline: sparkRows.map((s: any) => s.cnt),
   });
 });
