@@ -226,7 +226,7 @@ export function Explore() {
   const eraActive    = !!(yearFrom || yearTo);
   const eraLabel     = eraActive
     ? `${yearFrom ?? "?"} – ${yearTo ?? CURRENT_YEAR}`
-    : "Qualquer era";
+    : "Qualquer período";
   const hasFilters   = !!(country || eraActive || sort !== "popular");
 
   return (
@@ -285,7 +285,7 @@ export function Explore() {
           {/* Country — uses its own built-in dropdown */}
           <CountryPicker value={country} onChange={v => changeCountry(v)} />
 
-          {/* Era / Year range */}
+          {/* Período / Year range */}
           <div className="relative">
             <button
               onClick={() => setEraOpen(o => !o)}
@@ -308,7 +308,7 @@ export function Explore() {
                 {/* Presets */}
                 <div className="px-3 pt-3 pb-2">
                   <p className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider mb-2">
-                    Era predefinida
+                    Período predefinido
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     <button
