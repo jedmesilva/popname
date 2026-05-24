@@ -340,23 +340,37 @@ router.get("/names/:name/countries", async (req, res): Promise<void> => {
   const params = GetNameCountriesParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const nameParam = Array.isArray(params.data.name) ? params.data.name[0] : params.data.name;
-  const { rows: totalRow } = await pool.query(
-    `SELECT SUM(total)::int AS grand_total FROM name_regions WHERE LOWER(name) = LOWER($1)`,
-    [nameParam]
-  );
+  const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 50);
+  const offset = Math.max(Number(req.query.offset) || 0, 0);
+  const [{ rows: totalRow }, { rows: countRow }, { rows }] = await Promise.all([
+    pool.query(
+      `SELECT SUM(total)::int AS grand_total FROM name_regions WHERE LOWER(name) = LOWER($1)`,
+      [nameParam]
+    ),
+    pool.query(
+      `SELECT COUNT(*)::int AS total_countries FROM name_regions WHERE LOWER(name) = LOWER($1) AND birth_country IS NOT NULL`,
+      [nameParam]
+    ),
+    pool.query(
+      `SELECT birth_country, total FROM name_regions
+       WHERE LOWER(name) = LOWER($1) AND birth_country IS NOT NULL
+       ORDER BY total DESC LIMIT $2 OFFSET $3`,
+      [nameParam, limit, offset]
+    ),
+  ]);
   const grandTotal = Number(totalRow[0]?.grand_total ?? 0);
-  const { rows } = await pool.query(
-    `SELECT birth_country, total FROM name_regions
-     WHERE LOWER(name) = LOWER($1) AND birth_country IS NOT NULL
-     ORDER BY total DESC LIMIT 20`,
-    [nameParam]
-  );
-  res.json(rows.map((c: any) => ({
-    country: c.birth_country ?? "Unknown",
-    countryCode: c.birth_country ?? "",
-    count: Number(c.total),
-    percentage: grandTotal > 0 ? Math.round((Number(c.total) / grandTotal) * 100) : 0,
-  })));
+  const totalCountries = Number(countRow[0]?.total_countries ?? 0);
+  res.json({
+    total: totalCountries,
+    limit,
+    offset,
+    items: rows.map((c: any) => ({
+      country: c.birth_country ?? "Unknown",
+      countryCode: c.birth_country ?? "",
+      count: Number(c.total),
+      percentage: grandTotal > 0 ? Math.round((Number(c.total) / grandTotal) * 100) : 0,
+    })),
+  });
 });
 
 // GET /names/:name

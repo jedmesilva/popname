@@ -3,7 +3,7 @@ import { useParams, Link } from "wouter";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { ArrowLeft, Globe, History, Activity, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { ArrowLeft, Globe, History, Activity, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as Flags from "country-flag-icons/react/3x2";
 
@@ -29,31 +29,32 @@ export function NameDetail() {
     query: { enabled: !!name, queryKey: getGetNameHistoryQueryKey(name) }
   });
 
-  const [allCountries, setAllCountries] = useState<CountryEntry[] | null>(null);
+  const PAGE_SIZE = 10;
+  const INITIAL_SIZE = 5;
+  const [extraCountries, setExtraCountries] = useState<CountryEntry[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [totalCountries, setTotalCountries] = useState<number | null>(null);
+
+  const initialCountries = (detail?.topCountries ?? []) as CountryEntry[];
+  const displayedCountries: CountryEntry[] = [...initialCountries, ...extraCountries];
+  const loadedCount = displayedCountries.length;
+  const hasMore = totalCountries === null
+    ? initialCountries.length >= INITIAL_SIZE
+    : loadedCount < totalCountries;
 
   async function handleLoadMore() {
-    if (allCountries) {
-      setExpanded(true);
-      return;
-    }
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/names/${encodeURIComponent(name)}/countries`);
-      const data: CountryEntry[] = await res.json();
-      setAllCountries(data);
-      setExpanded(true);
+      const offset = extraCountries.length === 0 ? INITIAL_SIZE : loadedCount;
+      const url = `/api/names/${encodeURIComponent(name)}/countries?limit=${PAGE_SIZE}&offset=${offset}`;
+      const res = await fetch(url);
+      const data: { total: number; items: CountryEntry[] } = await res.json();
+      setTotalCountries(data.total);
+      setExtraCountries(prev => [...prev, ...data.items]);
     } finally {
       setLoadingMore(false);
     }
   }
-
-  const initialCountries = detail?.topCountries ?? [];
-  const displayedCountries: CountryEntry[] = expanded && allCountries
-    ? allCountries
-    : (initialCountries as CountryEntry[]);
-  const hasMore = !expanded && (allCountries ? allCountries.length > initialCountries.length : initialCountries.length >= 5);
 
   return (
     <div className="flex-1 container mx-auto px-4 py-12">
@@ -174,28 +175,24 @@ export function NameDetail() {
                 )}
               </div>
 
-              {(hasMore || expanded) && (
+              {hasMore && (
                 <div className="mt-6 pt-6 border-t border-border">
-                  {expanded ? (
-                    <button
-                      onClick={() => setExpanded(false)}
-                      className="w-full flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                      Ver menos
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={loadingMore}
-                      className="w-full flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                    >
-                      {loadingMore
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Carregando...</>
-                        : <><ChevronDown className="w-4 h-4" /> Ver mais países</>
-                      }
-                    </button>
-                  )}
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="w-full flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                  >
+                    {loadingMore
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Carregando...</>
+                      : <>
+                          <ChevronDown className="w-4 h-4" />
+                          Ver mais países
+                          {totalCountries !== null && (
+                            <span className="opacity-50">({loadedCount}/{totalCountries})</span>
+                          )}
+                        </>
+                    }
+                  </button>
                 </div>
               )}
             </div>
