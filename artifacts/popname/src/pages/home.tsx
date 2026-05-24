@@ -300,7 +300,7 @@ export function Home() {
             {/* By country */}
             <div className="border border-border p-6 flex flex-col">
               <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
-                Nomes por país
+                Populares por país
               </p>
               <div className="space-y-2 flex-1">
                 {loadingByCountry
