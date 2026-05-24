@@ -307,53 +307,44 @@ router.get("/names/browse", async (req, res): Promise<void> => {
 
   const nameList = rows.map((r: any) => r.name as string);
 
-  const [{ rows: sparkRows }, { rows: trendRows }] = await Promise.all([
-    pool.query(
-      `SELECT
-         LOWER(name_text) AS name_lower,
-         EXTRACT(YEAR FROM registration_date)::int AS yr,
-         COUNT(*)::int AS cnt
-       FROM names
-       WHERE LOWER(name_text) = ANY($1::text[])
-         AND registration_date IS NOT NULL
-         AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
-       GROUP BY name_lower, yr
-       ORDER BY name_lower, yr`,
-      [nameList.map((n: string) => n.toLowerCase())]
-    ),
-    pool.query(
-      `SELECT
-         LOWER(name_text) AS name_lower,
-         COUNT(*) FILTER (
-           WHERE registration_date IS NOT NULL
-             AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
-         )::int AS recent,
-         COUNT(*) FILTER (
-           WHERE registration_date IS NOT NULL
-             AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 19
-             AND EXTRACT(YEAR FROM registration_date) < EXTRACT(YEAR FROM NOW()) - 9
-         )::int AS older
-       FROM names
-       WHERE LOWER(name_text) = ANY($1::text[])
-       GROUP BY name_lower`,
-      [nameList.map((n: string) => n.toLowerCase())]
-    ),
-  ]);
+  const { rows: sparkRows } = await pool.query(
+    `SELECT
+       LOWER(name_text) AS name_lower,
+       EXTRACT(YEAR FROM registration_date)::int AS yr,
+       COUNT(*)::int AS cnt
+     FROM names
+     WHERE LOWER(name_text) = ANY($1::text[])
+       AND registration_date IS NOT NULL
+       AND EXTRACT(YEAR FROM registration_date) >= EXTRACT(YEAR FROM NOW()) - 9
+     GROUP BY name_lower, yr
+     ORDER BY name_lower, yr`,
+    [nameList.map((n: string) => n.toLowerCase())]
+  );
 
+  // Build 10-point sparklines (one per year, zeros for years with no data)
+  const currentYear = new Date().getFullYear();
   const sparkMap = new Map<string, number[]>();
+  for (const name of nameList) {
+    sparkMap.set(name.toLowerCase(), Array(10).fill(0));
+  }
   for (const r of sparkRows) {
-    const key = r.name_lower as string;
-    if (!sparkMap.has(key)) sparkMap.set(key, []);
-    sparkMap.get(key)!.push(Number(r.cnt));
+    const key       = r.name_lower as string;
+    const yearIndex = Number(r.yr) - (currentYear - 9);
+    if (yearIndex >= 0 && yearIndex < 10) {
+      const arr = sparkMap.get(key);
+      if (arr) arr[yearIndex] = Number(r.cnt);
+    }
   }
 
+  // Derive changePercent from sparkline so they always agree:
+  // compare sum of first 5 years vs sum of last 5 years
   const trendMap = new Map<string, number | null>();
-  for (const r of trendRows) {
-    const recent = Number(r.recent);
-    const older = Number(r.older);
-    if (recent === 0 && older === 0) { trendMap.set(r.name_lower, null); continue; }
-    if (older === 0) { trendMap.set(r.name_lower, 100); continue; }
-    trendMap.set(r.name_lower, Math.round(((recent - older) / older) * 100));
+  for (const [key, spark] of sparkMap) {
+    const first = spark.slice(0, 5).reduce((a, b) => a + b, 0);
+    const last  = spark.slice(5).reduce((a, b) => a + b, 0);
+    if (first === 0 && last === 0) { trendMap.set(key, null); continue; }
+    if (first === 0) { trendMap.set(key, 100); continue; }
+    trendMap.set(key, Math.round(((last - first) / first) * 100));
   }
 
   res.json({
