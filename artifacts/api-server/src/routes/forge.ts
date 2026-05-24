@@ -65,7 +65,7 @@ router.post("/forge", async (req, res): Promise<void> => {
         meaning: meaning ?? "A fusion born from the roots of your lineage",
         origin: origin ?? "Hybrid",
         isUnique: !existing,
-        existingCount: existing?.count ?? 0,
+        existingCount: 0,
         inspirations: baseNames,
       });
     }
@@ -83,7 +83,7 @@ router.post("/forge", async (req, res): Promise<void> => {
       meaning: generated.meaning,
       origin: generated.origin,
       isUnique: !existing,
-      existingCount: existing?.count ?? 0,
+      existingCount: 0,
       inspirations: baseNames,
     });
   }
