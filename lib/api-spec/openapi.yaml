@@ -137,6 +137,45 @@ paths:
                 items:
                   $ref: "#/components/schemas/TrendingName"
 
+  /names/browse:
+    get:
+      operationId: browseNames
+      tags: [names]
+      summary: Browse names with flexible sorting, country and generation filters
+      parameters:
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [popular, rare, longest, shortest, trending, declining]
+            default: popular
+        - name: country
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: generation
+          in: query
+          schema:
+            type: ["string", "null"]
+            enum: [boomer, genx, millennial, genz, alpha, null]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Browsed names
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrowseResult"
+
   /names/rare:
     get:
       operationId: getRareNames
@@ -505,6 +544,21 @@ components:
           enum: [pending, verified, rejected]
         submittedAt:
           type: string
+
+    BrowseResult:
+      type: object
+      required: [items, total, page, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/NameSummary"
+        total:
+          type: integer
+        page:
+          type: integer
+        hasMore:
+          type: boolean
 
     ForgeInput:
       type: object

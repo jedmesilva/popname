@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BrowseNamesParams,
+  BrowseResult,
   Claim,
   ClaimInput,
   CountryCount,
@@ -453,6 +455,90 @@ export function useGetDecliningNames<TData = Awaited<ReturnType<typeof getDeclin
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetDecliningNamesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getBrowseNamesUrl = (params?: BrowseNamesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/names/browse?${stringifiedParams}` : `/api/names/browse`
+}
+
+/**
+ * @summary Browse names with flexible sorting, country and generation filters
+ */
+export const browseNames = async (params?: BrowseNamesParams, options?: RequestInit): Promise<BrowseResult> => {
+
+  return customFetch<BrowseResult>(getBrowseNamesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getBrowseNamesQueryKey = (params?: BrowseNamesParams,) => {
+    return [
+    `/api/names/browse`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getBrowseNamesQueryOptions = <TData = Awaited<ReturnType<typeof browseNames>>, TError = ErrorType<unknown>>(params?: BrowseNamesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof browseNames>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getBrowseNamesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof browseNames>>> = ({ signal }) => browseNames(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof browseNames>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type BrowseNamesQueryResult = NonNullable<Awaited<ReturnType<typeof browseNames>>>
+export type BrowseNamesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Browse names with flexible sorting, country and generation filters
+ */
+
+export function useBrowseNames<TData = Awaited<ReturnType<typeof browseNames>>, TError = ErrorType<unknown>>(
+ params?: BrowseNamesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof browseNames>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getBrowseNamesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

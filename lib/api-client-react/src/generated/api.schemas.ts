@@ -113,6 +113,13 @@ export interface Claim {
   submittedAt: string;
 }
 
+export interface BrowseResult {
+  items: NameSummary[];
+  total: number;
+  page: number;
+  hasMore: boolean;
+}
+
 export interface ForgeInput {
   baseNames?: string[];
   /** @nullable */
@@ -182,6 +189,43 @@ export const GetDecliningNamesPeriod = {
   '6m': '6m',
   '1y': '1y',
   '5y': '5y',
+} as const;
+
+export type BrowseNamesParams = {
+sort?: BrowseNamesSort;
+/**
+ * @nullable
+ */
+country?: string | null;
+/**
+ * @nullable
+ */
+generation?: BrowseNamesGeneration;
+page?: number;
+limit?: number;
+};
+
+export type BrowseNamesSort = typeof BrowseNamesSort[keyof typeof BrowseNamesSort];
+
+
+export const BrowseNamesSort = {
+  popular: 'popular',
+  rare: 'rare',
+  longest: 'longest',
+  shortest: 'shortest',
+  trending: 'trending',
+  declining: 'declining',
+} as const;
+
+export type BrowseNamesGeneration = typeof BrowseNamesGeneration[keyof typeof BrowseNamesGeneration] | null;
+
+
+export const BrowseNamesGeneration = {
+  boomer: 'boomer',
+  genx: 'genx',
+  millennial: 'millennial',
+  genz: 'genz',
+  alpha: 'alpha',
 } as const;
 
 export type GetRareNamesParams = {

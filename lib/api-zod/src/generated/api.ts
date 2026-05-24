@@ -103,6 +103,36 @@ export const GetDecliningNamesResponse = zod.array(GetDecliningNamesResponseItem
 
 
 /**
+ * @summary Browse names with flexible sorting, country and generation filters
+ */
+export const browseNamesQuerySortDefault = `popular`;
+export const browseNamesQueryPageDefault = 1;
+export const browseNamesQueryLimitDefault = 20;
+
+export const BrowseNamesQueryParams = zod.object({
+  "sort": zod.enum(['popular', 'rare', 'longest', 'shortest', 'trending', 'declining']).default(browseNamesQuerySortDefault),
+  "country": zod.coerce.string().nullish(),
+  "generation": zod.union([zod.literal('boomer'),zod.literal('genx'),zod.literal('millennial'),zod.literal('genz'),zod.literal('alpha'),zod.literal(null)]).nullish(),
+  "page": zod.coerce.number().default(browseNamesQueryPageDefault),
+  "limit": zod.coerce.number().default(browseNamesQueryLimitDefault)
+})
+
+export const BrowseNamesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "name": zod.string(),
+  "count": zod.number(),
+  "countries": zod.number(),
+  "origin": zod.string().nullish(),
+  "meaning": zod.string().nullish(),
+  "gender": zod.string().nullish()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "hasMore": zod.boolean()
+})
+
+
+/**
  * @summary Get rarest names in the index
  */
 export const getRareNamesQueryLimitDefault = 10;
