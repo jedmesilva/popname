@@ -105,14 +105,16 @@ router.get("/names/trending", async (req, res): Promise<void> => {
        SELECT name_text, COUNT(*)::bigint AS current_count
        FROM names
        WHERE status = 'verified'
-         AND COALESCE(registration_date, verified_at::date) >= (NOW() - INTERVAL '${interval}')::date
+         AND registration_date IS NOT NULL
+         AND registration_date >= (NOW() - INTERVAL '${interval}')::date
        GROUP BY name_text
      ), previous_period AS (
        SELECT name_text, COUNT(*)::bigint AS previous_count
        FROM names
        WHERE status = 'verified'
-         AND COALESCE(registration_date, verified_at::date) >= (NOW() - INTERVAL '${interval}' * 2)::date
-         AND COALESCE(registration_date, verified_at::date) <  (NOW() - INTERVAL '${interval}')::date
+         AND registration_date IS NOT NULL
+         AND registration_date >= (NOW() - INTERVAL '${interval}' * 2)::date
+         AND registration_date <  (NOW() - INTERVAL '${interval}')::date
        GROUP BY name_text
      )
      SELECT
