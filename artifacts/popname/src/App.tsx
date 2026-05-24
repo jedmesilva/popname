@@ -13,6 +13,7 @@ import { Explore } from "@/pages/explore";
 import { Trends } from "@/pages/trends";
 import { Claim } from "@/pages/claim";
 import { SearchResults } from "@/pages/search";
+import { Growth } from "@/pages/growth";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/tendencias" component={Trends} />
         <Route path="/reivindicar" component={Claim} />
         <Route path="/buscar" component={SearchResults} />
+        <Route path="/crescimento" component={Growth} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

@@ -10,6 +10,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/", label: "INÍCIO" },
     { href: "/explorar", label: "ÍNDICE" },
     { href: "/tendencias", label: "TENDÊNCIAS" },
+    { href: "/crescimento", label: "CRESCIMENTO" },
   ];
 
   return (

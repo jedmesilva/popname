@@ -44,8 +44,16 @@ O índice de nomes da civilização humana. Busca, explora, reivindica e cria no
 - **Buscar nome**: Pesquisa por nome com resultado detalhado (origem, significado, países, histórico)
 - **Explorar**: Nomes mais populares por década, por país, mais raros, em ascensão/queda
 - **Tendências**: Ranking de nomes em ascensão e declínio com filtros de período e sparklines
+- **Crescimento** (`/crescimento`): Visualização de crescimento — histórico civil por `name_history` (anual, verificados) e tendência em tempo real por `name_trends` (diária, verified+pending)
 - **Reivindicar**: Formulário para registrar existência no índice
 - **Criar/Forjar**: Gera nomes únicos a partir de combinações, significados e estilos
+
+## Views Supabase (crescimento)
+
+- `name_history` — participação % por ano com base em `registration_date` (status = verified)
+- `name_trends` — participação % por dia com base em `claimed_at` (status verified + pending)
+- Endpoints: `GET /api/views/name-history?name=&country=&yearFrom=&yearTo=`
+- Endpoints: `GET /api/views/name-trends?name=&country=&days=`
 
 ## User preferences
 

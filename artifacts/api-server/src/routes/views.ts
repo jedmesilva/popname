@@ -111,4 +111,64 @@ router.get("/views/name-regions/:name", async (req, res): Promise<void> => {
   res.json(rows);
 });
 
+// name_history — civil registration history (yearly, verified names)
+router.get("/views/name-history", async (req, res): Promise<void> => {
+  const name = String(req.query.name || "");
+  const country = req.query.country ? String(req.query.country) : null;
+  const yearFrom = req.query.yearFrom ? String(req.query.yearFrom) : null;
+  const yearTo = req.query.yearTo ? String(req.query.yearTo) : null;
+
+  if (!name) { res.status(400).json({ error: "name is required" }); return; }
+
+  const conds: string[] = ["LOWER(name_text) = LOWER($1)"];
+  const vals: any[] = [name];
+  let i = 2;
+
+  if (country) { conds.push(`birth_country = $${i++}`); vals.push(country); }
+  if (yearFrom) { conds.push(`periodo >= $${i++}::timestamptz`); vals.push(`${yearFrom}-01-01`); }
+  if (yearTo)   { conds.push(`periodo <= $${i++}::timestamptz`); vals.push(`${yearTo}-12-31`); }
+
+  const { rows } = await pool.query(
+    `SELECT
+       EXTRACT(YEAR FROM periodo)::int AS year,
+       total_nome::int,
+       total_periodo::int,
+       participacao_pct::float
+     FROM name_history
+     WHERE ${conds.join(" AND ")}
+     ORDER BY periodo`,
+    vals
+  );
+  res.json(rows);
+});
+
+// name_trends — real-time platform trend (daily, verified + pending)
+router.get("/views/name-trends", async (req, res): Promise<void> => {
+  const name = req.query.name ? String(req.query.name) : null;
+  const country = req.query.country ? String(req.query.country) : null;
+  const days = Math.min(Math.max(Number(req.query.days) || 30, 1), 365);
+
+  const conds: string[] = [`periodo >= NOW() - INTERVAL '${days} days'`];
+  const vals: any[] = [];
+  let i = 1;
+
+  if (name)    { conds.push(`LOWER(name_text) = LOWER($${i++})`); vals.push(name); }
+  if (country) { conds.push(`birth_country = $${i++}`);           vals.push(country); }
+
+  const { rows } = await pool.query(
+    `SELECT
+       periodo::date AS day,
+       name_text,
+       birth_country,
+       total_nome::int,
+       total_periodo::int,
+       participacao_pct::float
+     FROM name_trends
+     WHERE ${conds.join(" AND ")}
+     ORDER BY periodo, participacao_pct DESC`,
+    vals
+  );
+  res.json(rows);
+});
+
 export default router;
