@@ -81,7 +81,7 @@ export function Home() {
                 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-accent tabular-nums leading-none"
                 data-testid="stat-total-names"
               >
-                {(4381229047).toLocaleString("pt-BR")}
+                {(stats?.totalNamesIndexed ?? 4381229047).toLocaleString("pt-BR")}
               </div>
             )}
             <div className="text-xs md:text-sm text-muted-foreground mt-3 md:mt-4 uppercase tracking-widest font-mono">
@@ -98,7 +98,15 @@ export function Home() {
             </div>
             <span className="hidden md:block w-px h-4 bg-border" />
             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-              <span className="text-foreground font-bold">1,2B+</span>
+              <span className="text-foreground font-bold">
+                {stats?.peopleAnalyzed != null
+                  ? stats.peopleAnalyzed >= 1_000_000_000
+                    ? `${(stats.peopleAnalyzed / 1_000_000_000).toFixed(1)}B+`
+                    : stats.peopleAnalyzed >= 1_000_000
+                    ? `${(stats.peopleAnalyzed / 1_000_000).toFixed(1)}M+`
+                    : stats.peopleAnalyzed.toLocaleString("pt-BR")
+                  : "—"}
+              </span>
               <span>PESSOAS</span>
             </div>
             <span className="hidden md:block w-px h-4 bg-border" />
