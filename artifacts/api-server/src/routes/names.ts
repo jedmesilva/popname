@@ -155,41 +155,19 @@ router.get("/names/trending", async (req, res): Promise<void> => {
 router.get("/names/declining", async (req, res): Promise<void> => {
   const parsed = GetDecliningNamesQueryParams.safeParse(req.query);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const { period = "5y", limit = 10 } = parsed.data;
-  const interval = PERIOD_TO_INTERVAL[period] ?? "1825 days";
+  const { limit = 10 } = parsed.data;
 
   const { rows } = await pool.query(
-    `WITH current_period AS (
-       SELECT name_text, COUNT(*)::bigint AS current_count
-       FROM names
-       WHERE status = 'verified' AND verified_at >= NOW() - INTERVAL '${interval}'
-       GROUP BY name_text
-     ), previous_period AS (
-       SELECT name_text, COUNT(*)::bigint AS previous_count
-       FROM names
-       WHERE status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '${interval}' * 2
-         AND verified_at <  NOW() - INTERVAL '${interval}'
-       GROUP BY name_text
-     )
-     SELECT
-       pp.name_text AS name,
-       COALESCE(cp.current_count, 0) AS current_count,
-       COALESCE(pp.previous_count, 0) AS previous_count,
-       COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0) AS absolute_change,
-       CASE WHEN COALESCE(pp.previous_count, 0) = 0 THEN NULL
-            ELSE ROUND(
-              (COALESCE(cp.current_count, 0) - COALESCE(pp.previous_count, 0))::numeric
-              / COALESCE(pp.previous_count, 1)::numeric * 100, 2
-            )
-       END AS decline_percent,
+    `SELECT
+       nd.name,
+       nd.current_count,
+       nd.previous_count,
+       nd.decline_percent,
        COUNT(DISTINCT n.birth_country) FILTER (WHERE n.birth_country IS NOT NULL)::int AS country_count
-     FROM previous_period pp
-     LEFT JOIN current_period cp ON cp.name_text = pp.name_text
-     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(pp.name_text) AND n.status = 'verified'
-     WHERE COALESCE(cp.current_count, 0) < COALESCE(pp.previous_count, 0)
-     GROUP BY pp.name_text, cp.current_count, pp.previous_count
-     ORDER BY absolute_change ASC
+     FROM name_decline nd
+     LEFT JOIN names n ON LOWER(n.name_text) = LOWER(nd.name) AND n.status = 'verified'
+     GROUP BY nd.name, nd.current_count, nd.previous_count, nd.decline_percent
+     ORDER BY nd.decline_percent ASC
      LIMIT $1`,
     [limit]
   );
@@ -199,7 +177,6 @@ router.get("/names/declining", async (req, res): Promise<void> => {
       `SELECT COUNT(*)::int AS cnt
        FROM names
        WHERE LOWER(name_text) = LOWER($1) AND status = 'verified'
-         AND verified_at >= NOW() - INTERVAL '${interval}'
        GROUP BY DATE_TRUNC('month', verified_at)
        ORDER BY DATE_TRUNC('month', verified_at)`,
       [r.name]
