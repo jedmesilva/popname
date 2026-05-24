@@ -1,0 +1,488 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import {
+  useGetIndexStats, getGetIndexStatsQueryKey,
+  useGetTrendingNames, getGetTrendingNamesQueryKey,
+  useGetDecliningNames, getGetDecliningNamesQueryKey,
+  useGetFeaturedName, getGetFeaturedNameQueryKey,
+  useGetNamesByDecade, getGetNamesByDecadeQueryKey,
+  useGetRareNames, getGetRareNamesQueryKey,
+} from "@workspace/api-client-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "wouter";
+import { ArrowUpRight, TrendingUp, TrendingDown, Search } from "lucide-react";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
+
+export function Home() {
+  const [query, setQuery] = useState("");
+  const [, setLocation] = useLocation();
+
+  const { data: stats, isLoading: loadingStats } = useGetIndexStats({
+    query: { queryKey: getGetIndexStatsQueryKey() }
+  });
+
+  const { data: trending, isLoading: loadingTrending } = useGetTrendingNames(
+    { period: "1y", limit: 5 },
+    { query: { queryKey: getGetTrendingNamesQueryKey({ period: "1y", limit: 5 }) } }
+  );
+
+  const { data: declining, isLoading: loadingDeclining } = useGetDecliningNames(
+    { period: "5y", limit: 5 },
+    { query: { queryKey: getGetDecliningNamesQueryKey({ period: "5y", limit: 5 }) } }
+  );
+
+  const { data: featured } = useGetFeaturedName({
+    query: { queryKey: getGetFeaturedNameQueryKey() }
+  });
+
+  const { data: decades, isLoading: loadingDecades } = useGetNamesByDecade({
+    query: { queryKey: getGetNamesByDecadeQueryKey() }
+  });
+
+  const { data: rare } = useGetRareNames(
+    { limit: 5 },
+    { query: { queryKey: getGetRareNamesQueryKey({ limit: 5 }) } }
+  );
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (query.trim()) {
+      setLocation(`/nome/${encodeURIComponent(query.trim())}`);
+    }
+  }
+
+  return (
+    <div className="flex-1 flex flex-col">
+      {/* Hero */}
+      <section className="py-24 md:py-32 border-b border-border">
+        <div className="container mx-auto px-4 max-w-5xl text-center">
+          <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-6">
+            Human Name Index
+          </p>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-6 leading-tight">
+            O ÍNDICE DE NOMES DA<br />
+            <span className="text-muted-foreground">CIVILIZAÇÃO HUMANA.</span>
+          </h1>
+          <p className="text-muted-foreground font-mono text-sm mb-12">
+            Dados reais. Tendências globais. A história do seu nome, revelada.
+          </p>
+
+          <div className="my-10">
+            {loadingStats ? (
+              <Skeleton className="h-28 w-80 mx-auto" />
+            ) : (
+              <div
+                className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-accent tabular-nums"
+                data-testid="stat-total-names"
+              >
+                {(4381229047).toLocaleString("pt-BR")}
+              </div>
+            )}
+            <div className="text-sm text-muted-foreground mt-4 uppercase tracking-widest font-mono">
+              Nomes indexados
+            </div>
+          </div>
+
+          <div className="flex items-center gap-8 justify-center mb-12 text-sm font-mono text-muted-foreground">
+            <span>
+              <span className="text-foreground font-bold mr-2">
+                {stats?.countriesCovered ?? 195}
+              </span>
+              PAÍSES
+            </span>
+            <span className="w-px h-4 bg-border" />
+            <span>
+              <span className="text-foreground font-bold mr-2">1,2B+</span>
+              PESSOAS
+            </span>
+            <span className="w-px h-4 bg-border" />
+            <span>
+              <span className="text-accent font-bold mr-2">
+                +{(stats?.dailyGrowth ?? 12481).toLocaleString("pt-BR")}
+              </span>
+              HOJE
+            </span>
+          </div>
+
+          <form onSubmit={handleSearch} className="max-w-xl mx-auto flex gap-0">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Digite um nome..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                data-testid="input-search-name"
+                className="w-full h-14 bg-transparent border border-border pl-12 pr-4 outline-none focus:border-accent transition-all font-mono"
+              />
+            </div>
+            <button
+              type="submit"
+              data-testid="button-search"
+              className="h-14 px-8 bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors uppercase tracking-widest font-mono"
+            >
+              Buscar
+            </button>
+          </form>
+
+          {/* Popular now chips */}
+          <div className="flex flex-wrap justify-center gap-2 mt-6">
+            <span className="text-xs text-muted-foreground font-mono uppercase mr-2 leading-7">
+              Populares:
+            </span>
+            {["Lucas", "Maria", "Noah", "Aurora", "Helena", "Gael"].map((n) => (
+              <Link
+                key={n}
+                href={`/nome/${n}`}
+                data-testid={`chip-name-${n}`}
+                className="text-xs font-mono uppercase px-3 py-1 border border-border hover:border-accent hover:text-accent transition-colors"
+              >
+                {n} <ArrowUpRight className="inline w-3 h-3" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured name */}
+      {featured && (
+        <section className="py-16 border-b border-border bg-card">
+          <div className="container mx-auto px-4">
+            <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-4">
+              Nome mais popular do mundo
+            </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <h2
+                  className="text-6xl md:text-8xl font-bold tracking-tighter mb-4"
+                  data-testid="text-featured-name"
+                >
+                  {featured.name.toUpperCase()}
+                </h2>
+                <div className="flex items-center gap-6 text-muted-foreground font-mono text-sm mb-4">
+                  <span>{(featured.count).toLocaleString("pt-BR")} pessoas</span>
+                  <span>{featured.countries} países</span>
+                  {featured.changePercent !== null && (
+                    <span className="text-accent">
+                      +{featured.changePercent}% (5 anos)
+                    </span>
+                  )}
+                </div>
+                <Link
+                  href={`/nome/${featured.name}`}
+                  data-testid="link-featured-detail"
+                  className="inline-flex items-center gap-2 text-sm font-mono uppercase tracking-widest border border-border px-4 py-2 hover:border-accent hover:text-accent transition-colors"
+                >
+                  Ver detalhes <ArrowUpRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <div>
+                <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-4">
+                  Top países
+                </p>
+                <div className="space-y-3">
+                  {featured.topCountries.slice(0, 5).map((c) => (
+                    <div key={c.countryCode} className="flex items-center gap-4">
+                      <div className="w-32 font-mono text-sm truncate">{c.country}</div>
+                      <div className="flex-1 h-1 bg-border rounded-full">
+                        <div
+                          className="h-1 bg-accent rounded-full"
+                          style={{ width: `${c.percentage}%` }}
+                        />
+                      </div>
+                      <div className="font-mono text-sm text-muted-foreground w-10 text-right">
+                        {c.percentage}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Trending & Declining */}
+      <section className="py-16 border-b border-border">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {/* Trending */}
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold uppercase tracking-tighter flex items-center gap-3">
+                    <TrendingUp className="w-5 h-5 text-accent" />
+                    Nomes em Ascensão
+                  </h2>
+                  <p className="text-muted-foreground text-sm font-mono mt-1">
+                    Últimos 12 meses
+                  </p>
+                </div>
+                <Link
+                  href="/tendencias"
+                  className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
+                >
+                  Ver todos <ArrowUpRight className="w-3 h-3" />
+                </Link>
+              </div>
+              <div className="space-y-1">
+                {loadingTrending
+                  ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
+                  : trending?.map((item, idx) => (
+                    <TrendRowSmall
+                      key={item.name}
+                      name={item.name}
+                      rank={idx + 1}
+                      change={item.changePercent}
+                      sparkline={item.sparkline ?? []}
+                      rising
+                    />
+                  ))}
+              </div>
+            </div>
+
+            {/* Declining */}
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-bold uppercase tracking-tighter flex items-center gap-3">
+                    <TrendingDown className="w-5 h-5 text-destructive" />
+                    Nomes em Queda
+                  </h2>
+                  <p className="text-muted-foreground text-sm font-mono mt-1">
+                    Últimos 5 anos
+                  </p>
+                </div>
+                <Link
+                  href="/tendencias"
+                  className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
+                >
+                  Ver todos <ArrowUpRight className="w-3 h-3" />
+                </Link>
+              </div>
+              <div className="space-y-1">
+                {loadingDeclining
+                  ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
+                  : declining?.map((item, idx) => (
+                    <TrendRowSmall
+                      key={item.name}
+                      name={item.name}
+                      rank={idx + 1}
+                      change={item.changePercent}
+                      sparkline={item.sparkline ?? []}
+                      rising={false}
+                    />
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Explore section */}
+      <section className="py-16 border-b border-border bg-card">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold uppercase tracking-tighter mb-2">Explorar</h2>
+          <p className="text-muted-foreground text-sm font-mono mb-12">
+            Descubra tendências, origens e histórias por trás dos nomes.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* By decade */}
+            <div className="border border-border p-6 flex flex-col">
+              <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
+                Nomes mais populares por década
+              </p>
+              <div className="space-y-2 flex-1">
+                {loadingDecades
+                  ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-5 w-full" />)
+                  : decades?.slice(-6).map((d) => (
+                    <div
+                      key={d.decade}
+                      className={`flex items-center gap-3 font-mono text-sm ${
+                        d.decade >= 2020 ? "bg-accent text-black px-2 py-1 font-bold" : ""
+                      }`}
+                    >
+                      <span className="text-muted-foreground w-10">{d.decade}s</span>
+                      <span className="uppercase">{d.names[0]}</span>
+                    </div>
+                  ))}
+              </div>
+              <Link
+                href="/explorar"
+                data-testid="link-explore-decade"
+                className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
+              >
+                Ver linha do tempo <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {/* By country */}
+            <div className="border border-border p-6 flex flex-col">
+              <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
+                Nomes por país
+              </p>
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-5xl opacity-20">🌐</div>
+              </div>
+              <p className="text-sm text-muted-foreground font-mono mb-4">
+                Explore os nomes mais comuns em cada país do mundo.
+              </p>
+              <Link
+                href="/paises"
+                data-testid="link-explore-countries"
+                className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
+              >
+                Explorar países <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {/* Rarest */}
+            <div className="border border-border p-6 flex flex-col">
+              <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
+                Nome mais raro do índice
+              </p>
+              {rare?.[0] && (
+                <div className="flex-1">
+                  <div className="text-3xl font-bold uppercase mb-2">{rare[0].name}</div>
+                  <div className="font-mono text-xs text-muted-foreground">
+                    {rare[0].count} pessoas · {rare[0].countries} países
+                  </div>
+                </div>
+              )}
+              <Link
+                href="/explorar"
+                data-testid="link-explore-rare"
+                className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
+              >
+                Ver nomes raros <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+
+            {/* Declining */}
+            <div className="border border-border p-6 flex flex-col">
+              <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
+                Nomes em queda
+              </p>
+              <div className="space-y-3 flex-1">
+                {declining?.slice(0, 5).map((n, i) => (
+                  <div key={n.name} className="flex items-center justify-between text-sm font-mono">
+                    <span className="text-muted-foreground w-5">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="flex-1 ml-3 uppercase">{n.name}</span>
+                    <span className="text-destructive">{n.changePercent}%</span>
+                  </div>
+                ))}
+              </div>
+              <Link
+                href="/tendencias"
+                data-testid="link-explore-declining"
+                className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
+              >
+                Ver todos em queda <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Claim CTA */}
+      <section className="py-24 border-b border-border">
+        <div className="container mx-auto px-4 text-center max-w-3xl">
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tighter mb-6">
+            Seu nome existe apenas uma vez<br />na história.
+          </h2>
+          <p className="text-muted-foreground font-mono text-sm mb-8">
+            Reivindique seu nome para garantir que sua identidade esteja ligada a você — para sempre.
+          </p>
+          <Link
+            href="/reivindicar"
+            data-testid="button-claim-cta"
+            className="inline-flex items-center gap-3 bg-primary text-primary-foreground font-bold px-8 py-4 hover:bg-primary/90 transition-colors uppercase tracking-widest font-mono"
+          >
+            Reivindicar meu nome <ArrowUpRight className="w-5 h-5" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer stats */}
+      <footer className="py-12 border-t border-border">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-3 gap-8 text-center mb-8">
+            <div>
+              <div className="text-2xl font-bold font-mono">195+</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mt-1">
+                Países cobertos
+              </div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold font-mono">1,2B+</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mt-1">
+                Pessoas no índice
+              </div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold font-mono">100%</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-widest font-mono mt-1">
+                Dados verificados
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-between items-center text-xs font-mono text-muted-foreground border-t border-border pt-8">
+            <span>© 2026 POPNAME. O índice da civilização.</span>
+            <div className="flex gap-6">
+              <a href="#" className="hover:text-foreground transition-colors uppercase">Sobre</a>
+              <a href="#" className="hover:text-foreground transition-colors uppercase">API</a>
+              <a href="#" className="hover:text-foreground transition-colors uppercase">Privacidade</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function TrendRowSmall({
+  name, rank, change, sparkline, rising
+}: {
+  name: string;
+  rank: number;
+  change: number;
+  sparkline: number[];
+  rising: boolean;
+}) {
+  const chartData = sparkline.map((val, i) => ({ i, val }));
+  const color = rising ? "hsl(var(--accent))" : "hsl(var(--destructive))";
+
+  return (
+    <Link
+      href={`/nome/${name}`}
+      data-testid={`trend-row-${name}`}
+      className="flex items-center gap-4 px-4 py-3 border border-transparent hover:border-border hover:bg-card transition-colors group"
+    >
+      <span className="font-mono text-sm text-muted-foreground w-5">{rank}.</span>
+      <span className="flex-1 font-bold uppercase group-hover:text-accent transition-colors">{name}</span>
+      <div className="w-16 h-6 hidden sm:block">
+        {chartData.length > 0 && (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <Line
+                type="monotone"
+                dataKey="val"
+                stroke={color}
+                strokeWidth={1.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+      <span
+        className={`font-mono text-sm font-bold w-16 text-right ${
+          rising ? "text-accent" : "text-destructive"
+        }`}
+      >
+        {change > 0 ? "+" : ""}{change}%
+      </span>
+    </Link>
+  );
+}

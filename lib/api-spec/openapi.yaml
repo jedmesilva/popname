@@ -3,20 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: POPNAME – Human Name Index API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: names
+    description: Name search and detail
+  - name: index
+    description: Index-level stats and exploration
+  - name: claims
+    description: Name claim submissions
+  - name: forge
+    description: Name creation/forging
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +31,310 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /names/search:
+    get:
+      operationId: searchNames
+      tags: [names]
+      summary: Search names by query string
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NameSummary"
+
+  /names/popular:
+    get:
+      operationId: getPopularNames
+      tags: [names]
+      summary: Get most popular names globally
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: country
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: Popular names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NameSummary"
+
+  /names/trending:
+    get:
+      operationId: getTrendingNames
+      tags: [names]
+      summary: Get names rising in popularity
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [1m, 6m, 1y, 5y]
+            default: 1y
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Trending names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendingName"
+
+  /names/declining:
+    get:
+      operationId: getDecliningNames
+      tags: [names]
+      summary: Get names declining in popularity
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [1m, 6m, 1y, 5y]
+            default: 5y
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Declining names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendingName"
+
+  /names/rare:
+    get:
+      operationId: getRareNames
+      tags: [names]
+      summary: Get rarest names in the index
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Rare names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NameSummary"
+
+  /names/by-decade:
+    get:
+      operationId: getNamesByDecade
+      tags: [names]
+      summary: Get most popular names by decade
+      responses:
+        "200":
+          description: Names grouped by decade
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DecadeNames"
+
+  /names/{name}:
+    get:
+      operationId: getNameDetail
+      tags: [names]
+      summary: Get full details for a specific name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Name details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NameDetail"
+        "404":
+          description: Name not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /names/{name}/history:
+    get:
+      operationId: getNameHistory
+      tags: [names]
+      summary: Get popularity history for a name over decades
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Historical popularity data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PopularityPoint"
+
+  /names/{name}/countries:
+    get:
+      operationId: getNameCountries
+      tags: [names]
+      summary: Get country distribution for a name
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Country distribution
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CountryCount"
+
+  /index/stats:
+    get:
+      operationId: getIndexStats
+      tags: [index]
+      summary: Get global index statistics
+      responses:
+        "200":
+          description: Index stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexStats"
+
+  /index/featured:
+    get:
+      operationId: getFeaturedName
+      tags: [index]
+      summary: Get the featured/most searched name right now
+      responses:
+        "200":
+          description: Featured name with full detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NameDetail"
+
+  /claims:
+    post:
+      operationId: submitClaim
+      tags: [claims]
+      summary: Submit a name claim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimInput"
+      responses:
+        "201":
+          description: Claim submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        "400":
+          description: Invalid claim data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /claims/{id}:
+    get:
+      operationId: getClaimStatus
+      tags: [claims]
+      summary: Get the status of a name claim
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Claim status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        "404":
+          description: Claim not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /forge:
+    post:
+      operationId: forgeName
+      tags: [forge]
+      summary: Generate or forge a new name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgeInput"
+      responses:
+        "200":
+          description: Forged name suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForgeResult"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +345,208 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    NameSummary:
+      type: object
+      required: [name, count, countries]
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        countries:
+          type: integer
+        origin:
+          type: ["string", "null"]
+        meaning:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+
+    TrendingName:
+      type: object
+      required: [name, count, countries, changePercent, trend]
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        countries:
+          type: integer
+        changePercent:
+          type: number
+        trend:
+          type: string
+          enum: [rising, falling]
+        sparkline:
+          type: array
+          items:
+            type: number
+
+    NameDetail:
+      type: object
+      required: [name, count, countries, origin, meaning, gender, topCountries]
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        countries:
+          type: integer
+        origin:
+          type: string
+        meaning:
+          type: string
+        gender:
+          type: string
+        topCountries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CountryCount"
+        changePercent:
+          type: ["number", "null"]
+        sparkline:
+          type: array
+          items:
+            type: number
+
+    PopularityPoint:
+      type: object
+      required: [year, count]
+      properties:
+        year:
+          type: integer
+        count:
+          type: integer
+        rank:
+          type: ["integer", "null"]
+
+    CountryCount:
+      type: object
+      required: [country, countryCode, count, percentage]
+      properties:
+        country:
+          type: string
+        countryCode:
+          type: string
+        count:
+          type: integer
+        percentage:
+          type: number
+
+    DecadeNames:
+      type: object
+      required: [decade, names]
+      properties:
+        decade:
+          type: integer
+        names:
+          type: array
+          items:
+            type: string
+
+    IndexStats:
+      type: object
+      required: [totalNamesIndexed, uniqueNames, countriesCovered, peopleAnalyzed, lastUpdated]
+      properties:
+        totalNamesIndexed:
+          type: integer
+        uniqueNames:
+          type: integer
+        countriesCovered:
+          type: integer
+        peopleAnalyzed:
+          type: integer
+        lastUpdated:
+          type: string
+        dailyGrowth:
+          type: integer
+        verifiedClaims:
+          type: integer
+
+    ClaimInput:
+      type: object
+      required: [name, fullName, country, birthYear]
+      properties:
+        name:
+          type: string
+        fullName:
+          type: string
+        country:
+          type: string
+        birthYear:
+          type: integer
+        documentType:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+
+    Claim:
+      type: object
+      required: [id, name, status, submittedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fullName:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          enum: [pending, verified, rejected]
+        submittedAt:
+          type: string
+
+    ForgeInput:
+      type: object
+      properties:
+        baseNames:
+          type: array
+          items:
+            type: string
+        meaning:
+          type: ["string", "null"]
+        origin:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+        style:
+          type: ["string", "null"]
+          description: "e.g. classic, modern, mythological, nature"
+
+    ForgeResult:
+      type: object
+      required: [suggestions]
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ForgedName"
+
+    ForgedName:
+      type: object
+      required: [name, meaning, origin, isUnique]
+      properties:
+        name:
+          type: string
+        meaning:
+          type: string
+        origin:
+          type: string
+        isUnique:
+          type: boolean
+        existingCount:
+          type: integer
+        inspirations:
+          type: array
+          items:
+            type: string
