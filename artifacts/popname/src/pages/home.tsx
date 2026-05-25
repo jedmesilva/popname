@@ -47,8 +47,8 @@ export function Home() {
   );
 
   const { data: declining, isLoading: loadingDeclining } = useGetDecliningNames(
-    { period: "5y", limit: 5 },
-    { query: { queryKey: getGetDecliningNamesQueryKey({ period: "5y", limit: 5 }) } }
+    { period: "1y", limit: 5 },
+    { query: { queryKey: getGetDecliningNamesQueryKey({ period: "1y", limit: 5 }) } }
   );
 
   const { data: featured } = useGetFeaturedName({
@@ -380,8 +380,11 @@ export function Home() {
 
             {/* Declining */}
             <div className="border border-border p-6 flex flex-col">
-              <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
+              <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-1">
                 Nomes em queda
+              </p>
+              <p className="text-[10px] font-mono text-muted-foreground/60 uppercase mb-4">
+                Últimos 12 meses
               </p>
               <div className="space-y-3 flex-1">
                 {declining?.slice(0, 5).map((n, i) => (
