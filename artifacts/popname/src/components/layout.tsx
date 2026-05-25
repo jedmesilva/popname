@@ -4,9 +4,10 @@ import { Menu, X, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
-  { code: "pt-BR", label: "Português", short: "PT" },
-  { code: "en",   label: "English",   short: "EN" },
-  { code: "es",   label: "Español",   short: "ES" },
+  { code: "en",    label: "English",         short: "EN" },
+  { code: "pt-BR", label: "Português (BR)",  short: "BR" },
+  { code: "pt",    label: "Português (PT)",  short: "PT" },
+  { code: "es",    label: "Español",         short: "ES" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

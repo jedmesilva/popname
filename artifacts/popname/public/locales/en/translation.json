@@ -13,8 +13,9 @@
   },
   "lang": {
     "label": "Language",
-    "pt-BR": "Português",
     "en": "English",
+    "pt-BR": "Português (BR)",
+    "pt": "Português (PT)",
     "es": "Español"
   },
   "home": {

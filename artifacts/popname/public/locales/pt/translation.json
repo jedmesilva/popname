@@ -28,8 +28,8 @@
     "people": "PESSOAS",
     "today": "HOJE",
     "popularNow": "Populares:",
-    "searchPlaceholder": "Digite um nome...",
-    "searchBtn": "Buscar",
+    "searchPlaceholder": "Introduza um nome...",
+    "searchBtn": "Pesquisar",
     "featured": {
       "label": "Nome mais popular do mundo",
       "people": "pessoas",
@@ -45,28 +45,28 @@
     },
     "explore": {
       "title": "Explorar",
-      "subtitle": "Descubra tendências, origens e histórias por trás dos nomes.",
+      "subtitle": "Descubra tendências, origens e histórias por detrás dos nomes.",
       "byDecade": "Nomes mais populares por década",
       "timeline": "Ver linha do tempo",
       "byCountry": "Populares por país",
       "exploreCountries": "Explorar países",
       "rarest": "Nome mais raro do índice",
       "viewRare": "Ver nomes raros",
-      "declining": "Nomes em queda",
+      "declining": "Nomes em declínio",
       "last12months": "Últimos 12 meses",
-      "viewDeclining": "Ver todos em queda"
+      "viewDeclining": "Ver todos em declínio"
     },
     "cta": {
-      "title": "Seu nome existe apenas uma vez na história.",
-      "subtitle": "Reivindique seu nome para garantir que sua identidade esteja ligada a você — para sempre.",
-      "btn": "Reivindicar meu nome"
+      "title": "O seu nome existe apenas uma vez na história.",
+      "subtitle": "Reivindique o seu nome para garantir que a sua identidade está ligada a si — para sempre.",
+      "btn": "Reivindicar o meu nome"
     }
   },
   "explore": {
     "title": "Índice",
     "subtitle": "Explore os nomes, descubra padrões e acompanhe tendências na nomenclatura humana.",
-    "searchPlaceholder": "Buscar nome...",
-    "searchBtn": "Buscar",
+    "searchPlaceholder": "Pesquisar nome...",
+    "searchBtn": "Pesquisar",
     "noResults": "Nenhum nome encontrado com esses filtros.",
     "namesFound": "{{count}} nomes encontrados",
     "sort": {
@@ -108,7 +108,7 @@
     "clear": "Limpar",
     "page": "Pág. {{page}} de {{total}}",
     "prev": "ANTERIOR",
-    "next": "PRÓXIMA"
+    "next": "SEGUINTE"
   },
   "trends": {
     "title": "Tendências",
@@ -124,16 +124,16 @@
   },
   "growth": {
     "title": "Crescimento",
-    "subtitle": "Histórico civil por registro de nascimento · Tendência em tempo real na plataforma.",
+    "subtitle": "Histórico civil por registo de nascimento · Tendência em tempo real na plataforma.",
     "civHistory": "Histórico Civil",
-    "civDesc": "Participação percentual do nome no total de nascimentos registrados por ano (dados verificados).",
+    "civDesc": "Participação percentual do nome no total de nascimentos registados por ano (dados verificados).",
     "nameLabel": "Nome",
     "countryLabel": "País (ISO)",
     "fromLabel": "De",
     "toLabel": "Até",
     "query": "Consultar",
     "platform": "Tendência na Plataforma",
-    "platformDesc": "Volume diário de reivindicações registradas na plataforma (verificados + pendentes). Deixe \"Nome\" em branco para ver os mais ativos do período.",
+    "platformDesc": "Volume diário de reivindicações registadas na plataforma (verificados + pendentes). Deixe \"Nome\" em branco para ver os mais activos do período.",
     "nameOptional": "Nome (opcional)",
     "yearsWithData": "Anos com dados",
     "peak": "Pico",
@@ -141,8 +141,8 @@
     "participation": "Participação",
     "year": "Ano: {{val}}",
     "day": "Dia: {{val}}",
-    "noHistory": "Nenhum registro civil verificado encontrado para \"{{name}}\" no período.",
-    "noData": "Nenhum dado encontrado para o período e filtros selecionados.",
+    "noHistory": "Nenhum registo civil verificado encontrado para \"{{name}}\" no período.",
+    "noData": "Nenhum dado encontrado para o período e filtros seleccionados.",
     "period": "Período",
     "days": {
       "7": "7 DIAS",
@@ -154,7 +154,7 @@
   },
   "claim": {
     "title": "Reivindicar Nome",
-    "subtitle": "O Índice da Civilização é construído pela humanidade. Se o seu nome não consta ou você deseja certificar sua existência oficial no índice, submeta sua reivindicação.",
+    "subtitle": "O Índice da Civilização é construído pela humanidade. Se o seu nome não consta ou deseja certificar a sua existência oficial no índice, submeta a sua reivindicação.",
     "fields": {
       "name": "Nome Principal",
       "fullName": "Nome Completo",
@@ -163,32 +163,32 @@
       "docType": "Tipo de Documento (Opcional)",
       "docDesc": "Apenas para auditoria.",
       "email": "Email (Opcional)",
-      "emailDesc": "Para receber o status da reivindicação."
+      "emailDesc": "Para receber o estado da reivindicação."
     },
     "placeholders": {
       "name": "Ex: JOÃO",
       "fullName": "Ex: JOÃO SILVA",
-      "country": "Ex: BRASIL",
+      "country": "Ex: PORTUGAL",
       "birthYear": "2000",
-      "docType": "Ex: PASSAPORTE, RG",
-      "email": "contato@exemplo.com"
+      "docType": "Ex: PASSAPORTE, BI",
+      "email": "contacto@exemplo.pt"
     },
     "validation": {
-      "nameMin": "Nome deve ter pelo menos 2 caracteres.",
-      "fullNameRequired": "Nome completo é obrigatório.",
-      "countryRequired": "País é obrigatório.",
+      "nameMin": "O nome deve ter pelo menos 2 caracteres.",
+      "fullNameRequired": "O nome completo é obrigatório.",
+      "countryRequired": "O país é obrigatório.",
       "emailInvalid": "Email inválido."
     },
-    "submit": "Registrar no Índice",
-    "submitting": "Submetendo...",
+    "submit": "Registar no Índice",
+    "submitting": "A submeter...",
     "successTitle": "Reivindicação submetida",
-    "successDesc": "Seu ID de acompanhamento: {{id}}",
+    "successDesc": "O seu ID de acompanhamento: {{id}}",
     "errorTitle": "Erro ao submeter",
-    "errorDesc": "Ocorreu um erro ao processar sua reivindicação."
+    "errorDesc": "Ocorreu um erro ao processar a sua reivindicação."
   },
   "forge": {
     "title": "Forjar Nome",
-    "subtitle": "Sintetize novos nomes a partir do índice. Forneça ingredientes etimológicos e deixe o motor gerar identidades únicas, verificadas contra bilhões de registros.",
+    "subtitle": "Sintetize novos nomes a partir do índice. Forneça ingredientes etimológicos e deixe o motor gerar identidades únicas, verificadas contra milhares de milhões de registos.",
     "params": "Parâmetros de Síntese",
     "fields": {
       "baseNames": "Nomes Base (Separados por vírgula)",
@@ -203,7 +203,7 @@
       "style": "Ex: MODERNO"
     },
     "submit": "Forjar Nome",
-    "submitting": "Sintetizando...",
+    "submitting": "A sintetizar...",
     "results": "Resultados",
     "waiting": "Aguardando parâmetros para iniciar a forja.",
     "unique": "Único no Índice",
@@ -214,12 +214,12 @@
     "errorDesc": "A forja não conseguiu sintetizar um nome."
   },
   "search": {
-    "title": "Buscar",
+    "title": "Pesquisar",
     "subtitle": "Encontre nomes no índice global.",
     "backToIndex": "Voltar ao índice",
-    "placeholder": "Buscar nome...",
-    "btn": "Buscar",
-    "empty": "Digite um nome para começar a busca.",
+    "placeholder": "Pesquisar nome...",
+    "btn": "Pesquisar",
+    "empty": "Introduza um nome para começar a pesquisa.",
     "results_one": "{{count}} resultado para \"{{query}}\"",
     "results_other": "{{count}} resultados para \"{{query}}\"",
     "noResults": "Nenhum nome encontrado para \"{{query}}\".",
@@ -229,31 +229,31 @@
   "countries": {
     "title": "Países",
     "mostPopular": "Nomes mais populares: {{country}}",
-    "records": "registros",
+    "records": "registos",
     "noData": "Nenhum dado encontrado para este país."
   },
   "nameDetail": {
     "back": "Voltar",
     "notFound": "Nome não encontrado",
     "unknownOrigin": "Origem desconhecida",
-    "unknownGender": "Gênero não especificado",
+    "unknownGender": "Género não especificado",
     "countries": "Países",
     "popHistory": "Histórico de Popularidade",
     "noHistory": "Sem dados históricos",
     "topCountries": "Top Países",
     "noGeo": "Sem dados geográficos",
-    "loadingMore": "Carregando...",
+    "loadingMore": "A carregar...",
     "viewMore": "Ver mais países",
     "globalStats": "Estatísticas Globais",
     "totalPeople": "Total de Pessoas",
     "globalPresence": "Presença Global",
     "historicalChange": "Variação Histórica",
-    "fromFirstToLast": "do primeiro ao último registro",
+    "fromFirstToLast": "do primeiro ao último registo",
     "noData": "N/D",
-    "registrations": "Registros por Período",
-    "noRegistrations": "Sem registros neste período",
+    "registrations": "Registos por Período",
+    "noRegistrations": "Sem registos neste período",
     "participation": "Participação",
-    "registrationsLabel": "Registros",
+    "registrationsLabel": "Registos",
     "granularity": {
       "daily": "Diário",
       "weekly": "Semanal",
@@ -265,6 +265,6 @@
   },
   "notFound": {
     "title": "404 Página Não Encontrada",
-    "subtitle": "A página que você está procurando não existe."
+    "subtitle": "A página que procura não existe."
   }
 }
