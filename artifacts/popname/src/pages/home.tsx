@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { ArrowUpRight, TrendingUp, Search } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { useTranslation } from "react-i18next";
 
 function fmtPct(v: number): string {
   const abs = Math.abs(v);
@@ -35,6 +36,7 @@ const COUNTRY_NAMES: Record<string, string> = {
 export function Home() {
   const [query, setQuery] = useState("");
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   const { data: stats, isLoading: loadingStats } = useGetIndexStats({
     query: { queryKey: getGetIndexStatsQueryKey() }
@@ -86,14 +88,14 @@ export function Home() {
       <section className="py-16 md:py-32 border-b border-border overflow-hidden">
         <div className="container mx-auto px-4 max-w-5xl text-center">
           <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-4 md:mb-6">
-            Human Name Index
+            {t("home.eyebrow")}
           </p>
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-4 md:mb-6 leading-tight">
-            O ÍNDICE DE NOMES DA{" "}
-            <span className="text-muted-foreground">CIVILIZAÇÃO HUMANA.</span>
+            {t("home.heroLine1")}{" "}
+            <span className="text-muted-foreground">{t("home.heroLine2")}</span>
           </h1>
           <p className="text-muted-foreground font-mono text-xs md:text-sm mb-8 md:mb-12">
-            Dados reais. Tendências globais. A história do seu nome, revelada.
+            {t("home.heroSubtitle")}
           </p>
 
           <div className="my-8 md:my-10">
@@ -104,11 +106,11 @@ export function Home() {
                 className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter text-accent tabular-nums leading-none"
                 data-testid="stat-total-names"
               >
-                {(stats?.totalNamesIndexed ?? 4381229047).toLocaleString("pt-BR")}
+                {(stats?.totalNamesIndexed ?? 4381229047).toLocaleString()}
               </div>
             )}
             <div className="text-xs md:text-sm text-muted-foreground mt-3 md:mt-4 uppercase tracking-widest font-mono">
-              Nomes indexados
+              {t("home.namesIndexed")}
             </div>
           </div>
 
@@ -117,7 +119,7 @@ export function Home() {
               <span className="text-foreground font-bold">
                 {stats?.countriesCovered ?? 195}
               </span>
-              <span>PAÍSES</span>
+              <span>{t("home.countries")}</span>
             </div>
             <span className="hidden md:block w-px h-4 bg-border" />
             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
@@ -127,17 +129,17 @@ export function Home() {
                     ? `${(stats.peopleAnalyzed / 1_000_000_000).toFixed(1)}B+`
                     : stats.peopleAnalyzed >= 1_000_000
                     ? `${(stats.peopleAnalyzed / 1_000_000).toFixed(1)}M+`
-                    : stats.peopleAnalyzed.toLocaleString("pt-BR")
+                    : stats.peopleAnalyzed.toLocaleString()
                   : "—"}
               </span>
-              <span>PESSOAS</span>
+              <span>{t("home.people")}</span>
             </div>
             <span className="hidden md:block w-px h-4 bg-border" />
             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
               <span className="text-accent font-bold">
-                +{(stats?.dailyGrowth ?? 12481).toLocaleString("pt-BR")}
+                +{(stats?.dailyGrowth ?? 12481).toLocaleString()}
               </span>
-              <span>HOJE</span>
+              <span>{t("home.today")}</span>
             </div>
           </div>
 
@@ -146,7 +148,7 @@ export function Home() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Digite um nome..."
+                placeholder={t("home.searchPlaceholder")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 data-testid="input-search-name"
@@ -158,14 +160,14 @@ export function Home() {
               data-testid="button-search"
               className="h-12 md:h-14 px-5 md:px-8 bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors uppercase tracking-widest font-mono text-xs md:text-sm"
             >
-              Buscar
+              {t("home.searchBtn")}
             </button>
           </form>
 
           {/* Popular now chips */}
           <div className="flex flex-wrap justify-center gap-2 mt-6">
             <span className="text-xs text-muted-foreground font-mono uppercase mr-2 leading-7">
-              Populares:
+              {t("home.popularNow")}
             </span>
             {(popular ?? []).map((n) => (
               <Link
@@ -186,7 +188,7 @@ export function Home() {
         <section className="py-16 border-b border-border bg-card">
           <div className="container mx-auto px-4">
             <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-4">
-              Nome mais popular do mundo
+              {t("home.featured.label")}
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -197,11 +199,11 @@ export function Home() {
                   {featured.name?.toUpperCase()}
                 </h2>
                 <div className="flex items-center gap-6 text-muted-foreground font-mono text-sm mb-4">
-                  <span>{(featured.count).toLocaleString("pt-BR")} pessoas</span>
-                  <span>{featured.countries} países</span>
+                  <span>{(featured.count).toLocaleString()} {t("home.featured.people")}</span>
+                  <span>{featured.countries} {t("home.featured.countries")}</span>
                   {featured.changePercent !== null && (
                     <span className="text-accent">
-                      +{featured.changePercent}% (5 anos)
+                      +{featured.changePercent}% {t("home.featured.years5")}
                     </span>
                   )}
                 </div>
@@ -210,12 +212,12 @@ export function Home() {
                   data-testid="link-featured-detail"
                   className="inline-flex items-center gap-2 text-sm font-mono uppercase tracking-widest border border-border px-4 py-2 hover:border-accent hover:text-accent transition-colors"
                 >
-                  Ver detalhes <ArrowUpRight className="w-4 h-4" />
+                  {t("home.featured.viewDetails")} <ArrowUpRight className="w-4 h-4" />
                 </Link>
               </div>
               <div>
                 <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-4">
-                  Top países
+                  {t("home.featured.topCountries")}
                 </p>
                 <div className="space-y-3">
                   {featured.topCountries?.slice(0, 5).map((c) => {
@@ -253,17 +255,17 @@ export function Home() {
             <div>
               <h2 className="text-2xl font-bold uppercase tracking-tighter flex items-center gap-3">
                 <TrendingUp className="w-5 h-5 text-accent" />
-                Nomes em Ascensão
+                {t("home.trending.title")}
               </h2>
               <p className="text-muted-foreground text-sm font-mono mt-1">
-                Últimos 12 meses
+                {t("home.trending.period")}
               </p>
             </div>
             <Link
               href="/tendencias"
               className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
             >
-              Ver todos <ArrowUpRight className="w-3 h-3" />
+              {t("home.trending.viewAll")} <ArrowUpRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="space-y-1">
@@ -286,15 +288,15 @@ export function Home() {
       {/* Explore section */}
       <section className="py-16 border-b border-border bg-card">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold uppercase tracking-tighter mb-2">Explorar</h2>
+          <h2 className="text-2xl font-bold uppercase tracking-tighter mb-2">{t("home.explore.title")}</h2>
           <p className="text-muted-foreground text-sm font-mono mb-12">
-            Descubra tendências, origens e histórias por trás dos nomes.
+            {t("home.explore.subtitle")}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* By decade */}
             <div className="border border-border p-6 flex flex-col">
               <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
-                Nomes mais populares por década
+                {t("home.explore.byDecade")}
               </p>
               <div className="space-y-2 flex-1">
                 {loadingDecades
@@ -316,14 +318,14 @@ export function Home() {
                 data-testid="link-explore-decade"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
-                Ver linha do tempo <ArrowUpRight className="w-3 h-3" />
+                {t("home.explore.timeline")} <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
 
             {/* By country */}
             <div className="border border-border p-6 flex flex-col">
               <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
-                Populares por país
+                {t("home.explore.byCountry")}
               </p>
               <div className="space-y-2 flex-1">
                 {loadingByCountry
@@ -342,7 +344,7 @@ export function Home() {
                         >
                           {item.name}
                         </Link>
-                        </div>
+                      </div>
                     );
                   })}
               </div>
@@ -351,20 +353,20 @@ export function Home() {
                 data-testid="link-explore-countries"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
-                Explorar países <ArrowUpRight className="w-3 h-3" />
+                {t("home.explore.exploreCountries")} <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
 
             {/* Rarest */}
             <div className="border border-border p-6 flex flex-col">
               <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
-                Nome mais raro do índice
+                {t("home.explore.rarest")}
               </p>
               {rare?.[0] && (
                 <div className="flex-1">
                   <div className="text-3xl font-bold uppercase mb-2">{rare[0].name}</div>
                   <div className="font-mono text-xs text-muted-foreground">
-                    {rare[0].count} pessoas · {rare[0].countries} países
+                    {rare[0].count} {t("home.featured.people")} · {rare[0].countries} {t("home.featured.countries")}
                   </div>
                 </div>
               )}
@@ -373,33 +375,35 @@ export function Home() {
                 data-testid="link-explore-rare"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
-                Ver nomes raros <ArrowUpRight className="w-3 h-3" />
+                {t("home.explore.viewRare")} <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
 
             {/* Declining */}
             <div className="border border-border p-6 flex flex-col">
               <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-1">
-                Nomes em queda
+                {t("home.explore.declining")}
               </p>
               <p className="text-[10px] font-mono text-muted-foreground/60 uppercase mb-4">
-                Últimos 12 meses
+                {t("home.explore.last12months")}
               </p>
               <div className="space-y-3 flex-1">
-                {declining?.slice(0, 5).map((n, i) => (
-                  <div key={n.name} className="flex items-center justify-between text-sm font-mono">
-                    <span className="text-muted-foreground w-5">{String(i + 1).padStart(2, "0")}</span>
-                    <span className="flex-1 ml-3 uppercase">{n.name}</span>
-                    <span className="text-destructive">{n.changePercent !== null ? `-${fmtPct(n.changePercent)}` : "—"}</span>
-                  </div>
-                ))}
+                {loadingDeclining
+                  ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-5 w-full" />)
+                  : declining?.slice(0, 5).map((n, i) => (
+                    <div key={n.name} className="flex items-center justify-between text-sm font-mono">
+                      <span className="text-muted-foreground w-5">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="flex-1 ml-3 uppercase">{n.name}</span>
+                      <span className="text-destructive">{n.changePercent !== null ? `-${fmtPct(n.changePercent)}` : "—"}</span>
+                    </div>
+                  ))}
               </div>
               <Link
                 href="/tendencias"
                 data-testid="link-explore-declining"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
-                Ver todos em queda <ArrowUpRight className="w-3 h-3" />
+                {t("home.explore.viewDeclining")} <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
           </div>
@@ -410,17 +414,17 @@ export function Home() {
       <section className="py-24 border-b border-border">
         <div className="container mx-auto px-4 text-center max-w-3xl">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tighter mb-6">
-            Seu nome existe apenas uma vez<br />na história.
+            {t("home.cta.title")}
           </h2>
           <p className="text-muted-foreground font-mono text-sm mb-8">
-            Reivindique seu nome para garantir que sua identidade esteja ligada a você — para sempre.
+            {t("home.cta.subtitle")}
           </p>
           <Link
             href="/reivindicar"
             data-testid="button-claim-cta"
             className="inline-flex items-center gap-3 bg-primary text-primary-foreground font-bold px-8 py-4 hover:bg-primary/90 transition-colors uppercase tracking-widest font-mono"
           >
-            Reivindicar meu nome <ArrowUpRight className="w-5 h-5" />
+            {t("home.cta.btn")} <ArrowUpRight className="w-5 h-5" />
           </Link>
         </div>
       </section>

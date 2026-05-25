@@ -3,11 +3,13 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
+import { useTranslation } from "react-i18next";
 
 type Period = '1m' | '6m' | '1y' | '5y';
 
 export function Trends() {
   const [period, setPeriod] = useState<Period>('1y');
+  const { t } = useTranslation();
 
   const { data: trending, isLoading: loadingTrending } = useGetTrendingNames(
     { period, limit: 10 },
@@ -19,12 +21,7 @@ export function Trends() {
     { query: { queryKey: getGetDecliningNamesQueryKey({ period, limit: 10 }) } }
   );
 
-  const periods: { value: Period; label: string }[] = [
-    { value: '1m', label: '1 MÊS' },
-    { value: '6m', label: '6 MESES' },
-    { value: '1y', label: '1 ANO' },
-    { value: '5y', label: '5 ANOS' },
-  ];
+  const periodKeys: Period[] = ['1m', '6m', '1y', '5y'];
 
   return (
     <div className="flex-1">
@@ -32,24 +29,24 @@ export function Trends() {
         <div className="container mx-auto px-4 py-16">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-4">Tendências</h1>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-4">{t("trends.title")}</h1>
               <p className="text-muted-foreground font-mono text-sm uppercase tracking-widest">
-                Mudanças relativas na popularidade global.
+                {t("trends.subtitle")}
               </p>
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
-              {periods.map(p => (
+              {periodKeys.map(p => (
                 <button
-                  key={p.value}
-                  onClick={() => setPeriod(p.value)}
+                  key={p}
+                  onClick={() => setPeriod(p)}
                   className={`px-4 py-2 font-mono text-xs uppercase tracking-widest border transition-colors ${
-                    period === p.value 
-                      ? 'border-accent bg-accent text-accent-foreground' 
+                    period === p
+                      ? 'border-accent bg-accent text-accent-foreground'
                       : 'border-border bg-transparent hover:border-accent/50'
                   }`}
                 >
-                  {p.label}
+                  {t(`trends.periods.${p}`)}
                 </button>
               ))}
             </div>
@@ -60,7 +57,7 @@ export function Trends() {
       <div className="container mx-auto px-4 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12">
         <section>
           <h2 className="text-2xl font-bold uppercase tracking-tighter mb-8 flex items-center gap-4">
-            <span className="w-3 h-3 bg-accent block rounded-full"></span> Em Ascensão
+            <span className="w-3 h-3 bg-accent block rounded-full"></span> {t("trends.rising")}
           </h2>
           <div className="space-y-2">
             {loadingTrending ? (
@@ -73,7 +70,7 @@ export function Trends() {
 
         <section>
           <h2 className="text-2xl font-bold uppercase tracking-tighter mb-8 flex items-center gap-4">
-            <span className="w-3 h-3 bg-destructive block rounded-full"></span> Em Declínio
+            <span className="w-3 h-3 bg-destructive block rounded-full"></span> {t("trends.declining")}
           </h2>
           <div className="space-y-2">
             {loadingDeclining ? (

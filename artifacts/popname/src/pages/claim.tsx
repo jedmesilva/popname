@@ -15,19 +15,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ShieldCheck } from "lucide-react";
-
-const formSchema = z.object({
-  name: z.string().min(2, { message: "Nome deve ter pelo menos 2 caracteres." }),
-  fullName: z.string().min(5, { message: "Nome completo é obrigatório." }),
-  country: z.string().min(2, { message: "País é obrigatório." }),
-  birthYear: z.coerce.number().min(1900).max(new Date().getFullYear()),
-  email: z.string().email({ message: "Email inválido." }).optional().or(z.literal("")),
-  documentType: z.string().optional(),
-});
+import { useTranslation } from "react-i18next";
 
 export function Claim() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const submitClaim = useSubmitClaim();
+
+  const formSchema = z.object({
+    name: z.string().min(2, { message: t("claim.validation.nameMin") }),
+    fullName: z.string().min(5, { message: t("claim.validation.fullNameRequired") }),
+    country: z.string().min(2, { message: t("claim.validation.countryRequired") }),
+    birthYear: z.coerce.number().min(1900).max(new Date().getFullYear()),
+    email: z.string().email({ message: t("claim.validation.emailInvalid") }).optional().or(z.literal("")),
+    documentType: z.string().optional(),
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,16 +49,16 @@ export function Claim() {
       {
         onSuccess: (data) => {
           toast({
-            title: "Reivindicação submetida",
-            description: `Seu ID de acompanhamento: ${data.id}`,
+            title: t("claim.successTitle"),
+            description: t("claim.successDesc", { id: data.id }),
           });
           form.reset();
         },
         onError: () => {
           toast({
             variant: "destructive",
-            title: "Erro ao submeter",
-            description: "Ocorreu um erro ao processar sua reivindicação.",
+            title: t("claim.errorTitle"),
+            description: t("claim.errorDesc"),
           });
         }
       }
@@ -67,9 +69,9 @@ export function Claim() {
     <div className="flex-1 container mx-auto px-4 py-16 max-w-3xl">
       <div className="text-center mb-16">
         <ShieldCheck className="w-16 h-16 mx-auto mb-6 text-accent" />
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-4">Reivindicar Nome</h1>
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-4">{t("claim.title")}</h1>
         <p className="text-muted-foreground font-mono text-sm uppercase tracking-widest max-w-xl mx-auto leading-relaxed">
-          O Índice da Civilização é construído pela humanidade. Se o seu nome não consta ou você deseja certificar sua existência oficial no índice, submeta sua reivindicação.
+          {t("claim.subtitle")}
         </p>
       </div>
 
@@ -82,9 +84,9 @@ export function Claim() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono uppercase text-xs tracking-widest">Nome Principal</FormLabel>
+                    <FormLabel className="font-mono uppercase text-xs tracking-widest">{t("claim.fields.name")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: JOÃO" className="font-mono uppercase" {...field} />
+                      <Input placeholder={t("claim.placeholders.name")} className="font-mono uppercase" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -95,9 +97,9 @@ export function Claim() {
                 name="fullName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono uppercase text-xs tracking-widest">Nome Completo</FormLabel>
+                    <FormLabel className="font-mono uppercase text-xs tracking-widest">{t("claim.fields.fullName")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: JOÃO SILVA" className="font-mono uppercase" {...field} />
+                      <Input placeholder={t("claim.placeholders.fullName")} className="font-mono uppercase" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -108,9 +110,9 @@ export function Claim() {
                 name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono uppercase text-xs tracking-widest">País de Origem</FormLabel>
+                    <FormLabel className="font-mono uppercase text-xs tracking-widest">{t("claim.fields.country")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: BRASIL" className="font-mono uppercase" {...field} />
+                      <Input placeholder={t("claim.placeholders.country")} className="font-mono uppercase" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -121,9 +123,9 @@ export function Claim() {
                 name="birthYear"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono uppercase text-xs tracking-widest">Ano de Nascimento</FormLabel>
+                    <FormLabel className="font-mono uppercase text-xs tracking-widest">{t("claim.fields.birthYear")}</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="2000" className="font-mono uppercase" {...field} />
+                      <Input type="number" placeholder={t("claim.placeholders.birthYear")} className="font-mono uppercase" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -134,11 +136,11 @@ export function Claim() {
                 name="documentType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono uppercase text-xs tracking-widest">Tipo de Documento (Opcional)</FormLabel>
+                    <FormLabel className="font-mono uppercase text-xs tracking-widest">{t("claim.fields.docType")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: PASSAPORTE, RG" className="font-mono uppercase" {...field} />
+                      <Input placeholder={t("claim.placeholders.docType")} className="font-mono uppercase" {...field} />
                     </FormControl>
-                    <FormDescription className="font-mono text-[10px]">Apenas para auditoria.</FormDescription>
+                    <FormDescription className="font-mono text-[10px]">{t("claim.fields.docDesc")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -148,23 +150,23 @@ export function Claim() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono uppercase text-xs tracking-widest">Email (Opcional)</FormLabel>
+                    <FormLabel className="font-mono uppercase text-xs tracking-widest">{t("claim.fields.email")}</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="contato@exemplo.com" className="font-mono uppercase" {...field} />
+                      <Input type="email" placeholder={t("claim.placeholders.email")} className="font-mono uppercase" {...field} />
                     </FormControl>
-                    <FormDescription className="font-mono text-[10px]">Para receber o status da reivindicação.</FormDescription>
+                    <FormDescription className="font-mono text-[10px]">{t("claim.fields.emailDesc")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-14 font-bold text-lg uppercase tracking-widest"
               disabled={submitClaim.isPending}
             >
-              {submitClaim.isPending ? "Submetendo..." : "Registrar no Índice"}
+              {submitClaim.isPending ? t("claim.submitting") : t("claim.submit")}
             </Button>
           </form>
         </Form>

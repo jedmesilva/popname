@@ -3,16 +3,17 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import Flags from "country-flag-icons/react/3x2";
+import { useTranslation } from "react-i18next";
 
 const TOP_COUNTRIES = [
-  { code: "BR", name: "Brasil" },
-  { code: "US", name: "Estados Unidos" },
-  { code: "IN", name: "Índia" },
-  { code: "JP", name: "Japão" },
-  { code: "CN", name: "China" },
-  { code: "FR", name: "França" },
-  { code: "DE", name: "Alemanha" },
-  { code: "RU", name: "Rússia" },
+  { code: "BR", nameKey: "Brasil" },
+  { code: "US", nameKey: "Estados Unidos" },
+  { code: "IN", nameKey: "Índia" },
+  { code: "JP", nameKey: "Japão" },
+  { code: "CN", nameKey: "China" },
+  { code: "FR", nameKey: "França" },
+  { code: "DE", nameKey: "Alemanha" },
+  { code: "RU", nameKey: "Rússia" },
 ];
 
 function CountryFlag({ code, className }: { code: string; className?: string }) {
@@ -23,6 +24,7 @@ function CountryFlag({ code, className }: { code: string; className?: string }) 
 
 export function Countries() {
   const [country, setCountry] = useState<string>("BR");
+  const { t } = useTranslation();
   const selected = TOP_COUNTRIES.find((c) => c.code === country);
 
   const { data: popular, isLoading } = useGetPopularNames(
@@ -35,7 +37,7 @@ export function Countries() {
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-12">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-8">
-            Países
+            {t("countries.title")}
           </h1>
 
           <div className="flex flex-wrap gap-2">
@@ -50,7 +52,7 @@ export function Countries() {
                 }`}
               >
                 <CountryFlag code={c.code} className="w-5 h-auto" />
-                {c.name}
+                {c.nameKey}
               </button>
             ))}
           </div>
@@ -63,7 +65,7 @@ export function Countries() {
             <CountryFlag code={selected.code} className="w-10 h-auto border border-border" />
           )}
           <h2 className="text-xl font-mono uppercase tracking-widest text-muted-foreground">
-            Nomes mais populares: {selected?.name}
+            {t("countries.mostPopular", { country: selected?.nameKey })}
           </h2>
         </div>
 
@@ -84,13 +86,13 @@ export function Countries() {
                   {item.name}
                 </div>
                 <div className="font-mono text-xs text-muted-foreground mt-2">
-                  {item.count.toLocaleString("pt-BR")} registros
+                  {item.count.toLocaleString()} {t("countries.records")}
                 </div>
               </Link>
             ))}
           {popular?.length === 0 && (
             <div className="col-span-full py-20 text-center font-mono text-muted-foreground uppercase">
-              Nenhum dado encontrado para este país.
+              {t("countries.noData")}
             </div>
           )}
         </div>

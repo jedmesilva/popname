@@ -1,0 +1,269 @@
+{
+  "nav": {
+    "home": "INICIO",
+    "index": "ÍNDICE",
+    "trends": "TENDENCIAS",
+    "growth": "CRECIMIENTO",
+    "claim": "RECLAMAR NOMBRE"
+  },
+  "footer": {
+    "tagline": "El índice de la civilización.",
+    "about": "Sobre",
+    "privacy": "Privacidad"
+  },
+  "lang": {
+    "label": "Idioma",
+    "pt-BR": "Português",
+    "en": "English",
+    "es": "Español"
+  },
+  "home": {
+    "eyebrow": "Human Name Index",
+    "heroLine1": "EL ÍNDICE DE NOMBRES DE",
+    "heroLine2": "LA CIVILIZACIÓN HUMANA.",
+    "heroSubtitle": "Datos reales. Tendencias globales. La historia de tu nombre, revelada.",
+    "namesIndexed": "Nombres indexados",
+    "countries": "PAÍSES",
+    "people": "PERSONAS",
+    "today": "HOY",
+    "popularNow": "Populares:",
+    "searchPlaceholder": "Ingresa un nombre...",
+    "searchBtn": "Buscar",
+    "featured": {
+      "label": "Nombre más popular del mundo",
+      "people": "personas",
+      "countries": "países",
+      "viewDetails": "Ver detalles",
+      "topCountries": "Top países",
+      "years5": "(5 años)"
+    },
+    "trending": {
+      "title": "Nombres en Alza",
+      "period": "Últimos 12 meses",
+      "viewAll": "Ver todos"
+    },
+    "explore": {
+      "title": "Explorar",
+      "subtitle": "Descubre tendencias, orígenes e historias detrás de los nombres.",
+      "byDecade": "Nombres más populares por década",
+      "timeline": "Ver línea de tiempo",
+      "byCountry": "Populares por país",
+      "exploreCountries": "Explorar países",
+      "rarest": "Nombre más raro del índice",
+      "viewRare": "Ver nombres raros",
+      "declining": "Nombres en declive",
+      "last12months": "Últimos 12 meses",
+      "viewDeclining": "Ver todos en declive"
+    },
+    "cta": {
+      "title": "Tu nombre existe solo una vez en la historia.",
+      "subtitle": "Reclama tu nombre para garantizar que tu identidad esté vinculada a ti — para siempre.",
+      "btn": "Reclamar mi nombre"
+    }
+  },
+  "explore": {
+    "title": "Índice",
+    "subtitle": "Explora nombres, descubre patrones y sigue tendencias en la nomenclatura humana.",
+    "searchPlaceholder": "Buscar nombre...",
+    "searchBtn": "Buscar",
+    "noResults": "Ningún nombre encontrado con estos filtros.",
+    "namesFound": "{{count}} nombres encontrados",
+    "sort": {
+      "popular": "Popularidad",
+      "trending": "En alza",
+      "declining": "En declive",
+      "rare": "Más raros",
+      "longest": "Más largos",
+      "shortest": "Más cortos"
+    },
+    "era": {
+      "anyPeriod": "Cualquier período",
+      "presets": "Período predefinido",
+      "custom": "Rango personalizado",
+      "all": "Todos",
+      "presetBefore1950": "Antes de 1950",
+      "preset1950_1970": "1950–1970",
+      "preset1970_1990": "1970–1990",
+      "preset1990_2000": "1990–2000",
+      "preset2000_2010": "2000–2010",
+      "presetFrom2010": "Desde 2010",
+      "from_placeholder": "Desde",
+      "to_placeholder": "Hasta",
+      "allTime": "Todo el tiempo",
+      "before": "Antes de {{year}}",
+      "from": "Desde {{year}}"
+    },
+    "trend": {
+      "growing": "Tendencia de crecimiento",
+      "declining": "Tendencia de declive",
+      "compared": "comparado al período anterior",
+      "rising": "En alza",
+      "declining_tag": "En declive"
+    },
+    "country_one": "país",
+    "country_other": "países",
+    "historicalChange": "variación histórica",
+    "allCountries": "Todos los países",
+    "clear": "Limpiar",
+    "page": "Pág. {{page}} de {{total}}",
+    "prev": "ANTERIOR",
+    "next": "SIGUIENTE"
+  },
+  "trends": {
+    "title": "Tendencias",
+    "subtitle": "Cambios relativos en la popularidad global.",
+    "periods": {
+      "1m": "1 MES",
+      "6m": "6 MESES",
+      "1y": "1 AÑO",
+      "5y": "5 AÑOS"
+    },
+    "rising": "En Alza",
+    "declining": "En Declive"
+  },
+  "growth": {
+    "title": "Crecimiento",
+    "subtitle": "Historial civil por registro de nacimiento · Tendencia en tiempo real en la plataforma.",
+    "civHistory": "Historial Civil",
+    "civDesc": "Participación porcentual del nombre en el total de nacimientos registrados por año (datos verificados).",
+    "nameLabel": "Nombre",
+    "countryLabel": "País (ISO)",
+    "fromLabel": "Desde",
+    "toLabel": "Hasta",
+    "query": "Consultar",
+    "platform": "Tendencia en la Plataforma",
+    "platformDesc": "Volumen diario de reclamaciones registradas en la plataforma (verificados + pendientes). Deja \"Nombre\" en blanco para ver los más activos del período.",
+    "nameOptional": "Nombre (opcional)",
+    "yearsWithData": "Años con datos",
+    "peak": "Pico",
+    "accumulated": "Total acumulado",
+    "participation": "Participación",
+    "year": "Año: {{val}}",
+    "day": "Día: {{val}}",
+    "noHistory": "Ningún registro civil verificado encontrado para \"{{name}}\" en el período.",
+    "noData": "Ningún dato encontrado para el período y filtros seleccionados.",
+    "period": "Período",
+    "days": {
+      "7": "7 DÍAS",
+      "30": "30 DÍAS",
+      "90": "90 DÍAS",
+      "180": "180 DÍAS",
+      "365": "1 AÑO"
+    }
+  },
+  "claim": {
+    "title": "Reclamar Nombre",
+    "subtitle": "El Índice de la Civilización está construido por la humanidad. Si tu nombre no aparece o deseas certificar tu existencia oficial en el índice, envía tu reclamación.",
+    "fields": {
+      "name": "Nombre Principal",
+      "fullName": "Nombre Completo",
+      "country": "País de Origen",
+      "birthYear": "Año de Nacimiento",
+      "docType": "Tipo de Documento (Opcional)",
+      "docDesc": "Solo para auditoría.",
+      "email": "Email (Opcional)",
+      "emailDesc": "Para recibir el estado de la reclamación."
+    },
+    "placeholders": {
+      "name": "Ej: JUAN",
+      "fullName": "Ej: JUAN GARCÍA",
+      "country": "Ej: MÉXICO",
+      "birthYear": "2000",
+      "docType": "Ej: PASAPORTE, DNI",
+      "email": "contacto@ejemplo.com"
+    },
+    "validation": {
+      "nameMin": "El nombre debe tener al menos 2 caracteres.",
+      "fullNameRequired": "El nombre completo es obligatorio.",
+      "countryRequired": "El país es obligatorio.",
+      "emailInvalid": "Email inválido."
+    },
+    "submit": "Registrar en el Índice",
+    "submitting": "Enviando...",
+    "successTitle": "Reclamación enviada",
+    "successDesc": "Tu ID de seguimiento: {{id}}",
+    "errorTitle": "Error al enviar",
+    "errorDesc": "Ocurrió un error al procesar tu reclamación."
+  },
+  "forge": {
+    "title": "Forjar Nombre",
+    "subtitle": "Sintetiza nuevos nombres del índice. Proporciona ingredientes etimológicos y deja que el motor genere identidades únicas, verificadas contra miles de millones de registros.",
+    "params": "Parámetros de Síntesis",
+    "fields": {
+      "baseNames": "Nombres Base (Separados por coma)",
+      "meaning": "Significado Deseado",
+      "origin": "Origen",
+      "style": "Estilo"
+    },
+    "placeholders": {
+      "baseNames": "Ej: LEO, MARIA",
+      "meaning": "Ej: GUERRERO DE LA LUZ",
+      "origin": "Ej: LATÍN",
+      "style": "Ej: MODERNO"
+    },
+    "submit": "Forjar Nombre",
+    "submitting": "Sintetizando...",
+    "results": "Resultados",
+    "waiting": "Esperando parámetros para iniciar la forja.",
+    "unique": "Único en el Índice",
+    "originLabel": "Origen:",
+    "meaningLabel": "Significado:",
+    "inspiredBy": "Inspirado en:",
+    "errorTitle": "Error en la forja",
+    "errorDesc": "La forja no pudo sintetizar un nombre."
+  },
+  "search": {
+    "title": "Buscar",
+    "subtitle": "Encuentra nombres en el índice global.",
+    "backToIndex": "Volver al índice",
+    "placeholder": "Buscar nombre...",
+    "btn": "Buscar",
+    "empty": "Ingresa un nombre para comenzar la búsqueda.",
+    "results_one": "{{count}} resultado para \"{{query}}\"",
+    "results_other": "{{count}} resultados para \"{{query}}\"",
+    "noResults": "Ningún nombre encontrado para \"{{query}}\".",
+    "country_one": "país",
+    "country_other": "países"
+  },
+  "countries": {
+    "title": "Países",
+    "mostPopular": "Nombres más populares: {{country}}",
+    "records": "registros",
+    "noData": "Ningún dato encontrado para este país."
+  },
+  "nameDetail": {
+    "back": "Volver",
+    "notFound": "Nombre no encontrado",
+    "unknownOrigin": "Origen desconocido",
+    "unknownGender": "Género no especificado",
+    "countries": "Países",
+    "popHistory": "Historial de Popularidad",
+    "noHistory": "Sin datos históricos",
+    "topCountries": "Top Países",
+    "noGeo": "Sin datos geográficos",
+    "loadingMore": "Cargando...",
+    "viewMore": "Ver más países",
+    "globalStats": "Estadísticas Globales",
+    "totalPeople": "Total de Personas",
+    "globalPresence": "Presencia Global",
+    "historicalChange": "Variación Histórica",
+    "fromFirstToLast": "del primer al último registro",
+    "noData": "N/D",
+    "registrations": "Registros por Período",
+    "noRegistrations": "Sin registros en este período",
+    "participation": "Participación",
+    "registrationsLabel": "Registros",
+    "granularity": {
+      "daily": "Diario",
+      "weekly": "Semanal",
+      "monthly": "Mensual",
+      "annual": "Anual",
+      "decade": "Década",
+      "century": "Siglo"
+    }
+  },
+  "notFound": {
+    "title": "404 Página No Encontrada",
+    "subtitle": "La página que buscas no existe."
+  }
+}

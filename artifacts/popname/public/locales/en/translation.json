@@ -1,0 +1,269 @@
+{
+  "nav": {
+    "home": "HOME",
+    "index": "INDEX",
+    "trends": "TRENDS",
+    "growth": "GROWTH",
+    "claim": "CLAIM NAME"
+  },
+  "footer": {
+    "tagline": "The civilization index.",
+    "about": "About",
+    "privacy": "Privacy"
+  },
+  "lang": {
+    "label": "Language",
+    "pt-BR": "Português",
+    "en": "English",
+    "es": "Español"
+  },
+  "home": {
+    "eyebrow": "Human Name Index",
+    "heroLine1": "THE NAME INDEX OF",
+    "heroLine2": "HUMAN CIVILIZATION.",
+    "heroSubtitle": "Real data. Global trends. The history of your name, revealed.",
+    "namesIndexed": "Names indexed",
+    "countries": "COUNTRIES",
+    "people": "PEOPLE",
+    "today": "TODAY",
+    "popularNow": "Popular:",
+    "searchPlaceholder": "Enter a name...",
+    "searchBtn": "Search",
+    "featured": {
+      "label": "World's most popular name",
+      "people": "people",
+      "countries": "countries",
+      "viewDetails": "View details",
+      "topCountries": "Top countries",
+      "years5": "(5 years)"
+    },
+    "trending": {
+      "title": "Rising Names",
+      "period": "Last 12 months",
+      "viewAll": "View all"
+    },
+    "explore": {
+      "title": "Explore",
+      "subtitle": "Discover trends, origins and stories behind names.",
+      "byDecade": "Most popular names by decade",
+      "timeline": "View timeline",
+      "byCountry": "Popular by country",
+      "exploreCountries": "Explore countries",
+      "rarest": "Rarest name in the index",
+      "viewRare": "View rare names",
+      "declining": "Declining names",
+      "last12months": "Last 12 months",
+      "viewDeclining": "View all declining"
+    },
+    "cta": {
+      "title": "Your name exists only once in history.",
+      "subtitle": "Claim your name to ensure your identity is linked to you — forever.",
+      "btn": "Claim my name"
+    }
+  },
+  "explore": {
+    "title": "Index",
+    "subtitle": "Explore names, discover patterns and track trends in human naming.",
+    "searchPlaceholder": "Search name...",
+    "searchBtn": "Search",
+    "noResults": "No names found with these filters.",
+    "namesFound": "{{count}} names found",
+    "sort": {
+      "popular": "Popularity",
+      "trending": "Rising",
+      "declining": "Declining",
+      "rare": "Rarest",
+      "longest": "Longest",
+      "shortest": "Shortest"
+    },
+    "era": {
+      "anyPeriod": "Any period",
+      "presets": "Preset period",
+      "custom": "Custom range",
+      "all": "All",
+      "presetBefore1950": "Before 1950",
+      "preset1950_1970": "1950–1970",
+      "preset1970_1990": "1970–1990",
+      "preset1990_2000": "1990–2000",
+      "preset2000_2010": "2000–2010",
+      "presetFrom2010": "From 2010",
+      "from_placeholder": "From",
+      "to_placeholder": "To",
+      "allTime": "All time",
+      "before": "Before {{year}}",
+      "from": "From {{year}}"
+    },
+    "trend": {
+      "growing": "Growth trend",
+      "declining": "Declining trend",
+      "compared": "compared to previous period",
+      "rising": "Rising",
+      "declining_tag": "Declining"
+    },
+    "country_one": "country",
+    "country_other": "countries",
+    "historicalChange": "historical change",
+    "allCountries": "All countries",
+    "clear": "Clear",
+    "page": "Page {{page}} of {{total}}",
+    "prev": "PREVIOUS",
+    "next": "NEXT"
+  },
+  "trends": {
+    "title": "Trends",
+    "subtitle": "Relative changes in global popularity.",
+    "periods": {
+      "1m": "1 MONTH",
+      "6m": "6 MONTHS",
+      "1y": "1 YEAR",
+      "5y": "5 YEARS"
+    },
+    "rising": "Rising",
+    "declining": "Declining"
+  },
+  "growth": {
+    "title": "Growth",
+    "subtitle": "Civil history by birth registration · Real-time trend on the platform.",
+    "civHistory": "Civil History",
+    "civDesc": "Name's percentage share of total registered births per year (verified data).",
+    "nameLabel": "Name",
+    "countryLabel": "Country (ISO)",
+    "fromLabel": "From",
+    "toLabel": "To",
+    "query": "Query",
+    "platform": "Platform Trend",
+    "platformDesc": "Daily volume of claims registered on the platform (verified + pending). Leave \"Name\" blank to see the most active in the period.",
+    "nameOptional": "Name (optional)",
+    "yearsWithData": "Years with data",
+    "peak": "Peak",
+    "accumulated": "Accumulated total",
+    "participation": "Participation",
+    "year": "Year: {{val}}",
+    "day": "Day: {{val}}",
+    "noHistory": "No verified civil records found for \"{{name}}\" in the period.",
+    "noData": "No data found for the selected period and filters.",
+    "period": "Period",
+    "days": {
+      "7": "7 DAYS",
+      "30": "30 DAYS",
+      "90": "90 DAYS",
+      "180": "180 DAYS",
+      "365": "1 YEAR"
+    }
+  },
+  "claim": {
+    "title": "Claim Name",
+    "subtitle": "The Civilization Index is built by humanity. If your name is missing or you want to certify your official existence in the index, submit your claim.",
+    "fields": {
+      "name": "First Name",
+      "fullName": "Full Name",
+      "country": "Country of Origin",
+      "birthYear": "Birth Year",
+      "docType": "Document Type (Optional)",
+      "docDesc": "For audit purposes only.",
+      "email": "Email (Optional)",
+      "emailDesc": "To receive the claim status."
+    },
+    "placeholders": {
+      "name": "E.g.: JOHN",
+      "fullName": "E.g.: JOHN SMITH",
+      "country": "E.g.: BRAZIL",
+      "birthYear": "2000",
+      "docType": "E.g.: PASSPORT, ID",
+      "email": "contact@example.com"
+    },
+    "validation": {
+      "nameMin": "Name must be at least 2 characters.",
+      "fullNameRequired": "Full name is required.",
+      "countryRequired": "Country is required.",
+      "emailInvalid": "Invalid email."
+    },
+    "submit": "Register in the Index",
+    "submitting": "Submitting...",
+    "successTitle": "Claim submitted",
+    "successDesc": "Your tracking ID: {{id}}",
+    "errorTitle": "Submission error",
+    "errorDesc": "An error occurred while processing your claim."
+  },
+  "forge": {
+    "title": "Forge Name",
+    "subtitle": "Synthesize new names from the index. Provide etymological ingredients and let the engine generate unique identities, verified against billions of records.",
+    "params": "Synthesis Parameters",
+    "fields": {
+      "baseNames": "Base Names (Comma separated)",
+      "meaning": "Desired Meaning",
+      "origin": "Origin",
+      "style": "Style"
+    },
+    "placeholders": {
+      "baseNames": "E.g.: LEO, MARIA",
+      "meaning": "E.g.: WARRIOR OF LIGHT",
+      "origin": "E.g.: LATIN",
+      "style": "E.g.: MODERN"
+    },
+    "submit": "Forge Name",
+    "submitting": "Synthesizing...",
+    "results": "Results",
+    "waiting": "Awaiting parameters to start forging.",
+    "unique": "Unique in the Index",
+    "originLabel": "Origin:",
+    "meaningLabel": "Meaning:",
+    "inspiredBy": "Inspired by:",
+    "errorTitle": "Forge error",
+    "errorDesc": "The forge could not synthesize a name."
+  },
+  "search": {
+    "title": "Search",
+    "subtitle": "Find names in the global index.",
+    "backToIndex": "Back to index",
+    "placeholder": "Search name...",
+    "btn": "Search",
+    "empty": "Enter a name to start searching.",
+    "results_one": "{{count}} result for \"{{query}}\"",
+    "results_other": "{{count}} results for \"{{query}}\"",
+    "noResults": "No names found for \"{{query}}\".",
+    "country_one": "country",
+    "country_other": "countries"
+  },
+  "countries": {
+    "title": "Countries",
+    "mostPopular": "Most popular names: {{country}}",
+    "records": "records",
+    "noData": "No data found for this country."
+  },
+  "nameDetail": {
+    "back": "Back",
+    "notFound": "Name not found",
+    "unknownOrigin": "Unknown origin",
+    "unknownGender": "Gender unspecified",
+    "countries": "Countries",
+    "popHistory": "Popularity History",
+    "noHistory": "No historical data",
+    "topCountries": "Top Countries",
+    "noGeo": "No geographic data",
+    "loadingMore": "Loading...",
+    "viewMore": "View more countries",
+    "globalStats": "Global Statistics",
+    "totalPeople": "Total People",
+    "globalPresence": "Global Presence",
+    "historicalChange": "Historical Change",
+    "fromFirstToLast": "from first to last record",
+    "noData": "N/A",
+    "registrations": "Records by Period",
+    "noRegistrations": "No records in this period",
+    "participation": "Participation",
+    "registrationsLabel": "Records",
+    "granularity": {
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "decade": "Decade",
+      "century": "Century"
+    }
+  },
+  "notFound": {
+    "title": "404 Page Not Found",
+    "subtitle": "The page you are looking for does not exist."
+  }
+}

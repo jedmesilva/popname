@@ -8,6 +8,7 @@ import {
   List, RotateCcw, TrendingUp, ChevronDown, X,
 } from "lucide-react";
 import { CountryPicker, ALL_COUNTRIES } from "@/components/country-picker";
+import { useTranslation } from "react-i18next";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -33,23 +34,16 @@ interface BrowseItem {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SORT_OPTIONS = [
-  { value: "popular",   label: "Popularidade" },
-  { value: "trending",  label: "Em ascensão"  },
-  { value: "declining", label: "Em declínio"  },
-  { value: "rare",      label: "Mais raros"   },
-  { value: "longest",   label: "Mais longos"  },
-  { value: "shortest",  label: "Mais curtos"  },
-] as const;
-type SortValue = typeof SORT_OPTIONS[number]["value"];
+const SORT_KEYS = ["popular", "trending", "declining", "rare", "longest", "shortest"] as const;
+type SortValue = typeof SORT_KEYS[number];
 
 const ERA_PRESETS = [
-  { label: "Antes de 1950",   from: null,  to: 1950  },
-  { label: "1950–1970",       from: 1950,  to: 1970  },
-  { label: "1970–1990",       from: 1970,  to: 1990  },
-  { label: "1990–2000",       from: 1990,  to: 2000  },
-  { label: "2000–2010",       from: 2000,  to: 2010  },
-  { label: "A partir de 2010", from: 2010, to: null  },
+  { key: "presetBefore1950", from: null,  to: 1950  },
+  { key: "preset1950_1970",  from: 1950,  to: 1970  },
+  { key: "preset1970_1990",  from: 1970,  to: 1990  },
+  { key: "preset1990_2000",  from: 1990,  to: 2000  },
+  { key: "preset2000_2010",  from: 2000,  to: 2010  },
+  { key: "presetFrom2010",   from: 2010,  to: null  },
 ] as const;
 
 // ─── Sparkline SVG ────────────────────────────────────────────────────────────
@@ -96,6 +90,7 @@ interface NameCardProps {
 }
 
 function NameCard({ name, count, countries, sort, changePercent, sparkline, cardIndex }: NameCardProps) {
+  const { t } = useTranslation();
   const rising   = sort === "declining" ? false : sort === "trending" ? true : (changePercent ?? 0) >= 0;
   const showPct  = changePercent != null;
   const trendCls = rising ? "text-accent" : "text-destructive";
@@ -117,7 +112,7 @@ function NameCard({ name, count, countries, sort, changePercent, sparkline, card
               {(changePercent! >= 0 ? "+" : "-")}{fmtPct(changePercent!)}
             </div>
             <div className="font-mono text-[9px] text-muted-foreground whitespace-nowrap mt-0.5">
-              variação histórica
+              {t("explore.historicalChange")}
             </div>
           </div>
         )}
@@ -127,12 +122,12 @@ function NameCard({ name, count, countries, sort, changePercent, sparkline, card
         <div className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
           <Users className="w-3 h-3 shrink-0" />
           {count >= 1_000_000
-            ? `${(count / 1_000_000).toFixed(1)}M registros`
-            : `${count.toLocaleString("pt-BR")} registros`}
+            ? `${(count / 1_000_000).toFixed(1)}M`
+            : count.toLocaleString()}
         </div>
         <div className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
           <Globe className="w-3 h-3 shrink-0" />
-          {countries} {countries === 1 ? "país" : "países"}
+          {t("explore.country", { count: countries })}
         </div>
       </div>
 
@@ -192,6 +187,7 @@ function Dropdown({ icon: Icon, label, active, children }: DropdownProps) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function Explore() {
+  const { t } = useTranslation();
   const [, setLocation]         = useLocation();
   const [sort, setSort]         = useState<SortValue>("popular");
   const [country, setCountry]   = useState<string | null>(null);
@@ -228,16 +224,16 @@ export function Explore() {
   }
 
   const isTrend      = sort === "trending" || sort === "declining";
-  const sortLabel    = SORT_OPTIONS.find(o => o.value === sort)?.label ?? "Popularidade";
+  const sortLabel    = t(`explore.sort.${sort}`);
   const countryLabel = country ? ALL_COUNTRIES.find(c => c.code === country)?.name : null;
-  const eraActive = !!(yearFrom || yearTo);
-  const eraLabel  = !eraActive
-    ? "Qualquer período"
+  const eraActive    = !!(yearFrom || yearTo);
+  const eraLabel     = !eraActive
+    ? t("explore.era.anyPeriod")
     : yearFrom && yearTo
       ? `${yearFrom} – ${yearTo}`
       : yearTo
-        ? `Antes de ${yearTo}`
-        : `A partir de ${yearFrom}`;
+        ? t("explore.era.before", { year: yearTo })
+        : t("explore.era.from", { year: yearFrom });
   const hasFilters   = !!(country || eraActive || sort !== "popular");
 
   return (
@@ -246,9 +242,9 @@ export function Explore() {
       {/* ── Header ── */}
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 pt-8 pb-6">
-          <h1 className="text-5xl font-bold tracking-tighter uppercase mb-1">Índice</h1>
+          <h1 className="text-5xl font-bold tracking-tighter uppercase mb-1">{t("explore.title")}</h1>
           <p className="text-muted-foreground text-sm">
-            Explore os nomes, descubra padrões e acompanhe tendências na nomenclatura humana.
+            {t("explore.subtitle")}
           </p>
         </div>
       </div>
@@ -262,7 +258,7 @@ export function Explore() {
             <input
               value={searchQ}
               onChange={e => setSearchQ(e.target.value)}
-              placeholder="Buscar nome..."
+              placeholder={t("explore.searchPlaceholder")}
               className="bg-transparent font-mono text-sm text-foreground placeholder:text-muted-foreground outline-none flex-1"
             />
             {searchQ && (
@@ -274,7 +270,7 @@ export function Explore() {
           </div>
           <button type="submit"
             className="px-4 py-2.5 border border-border bg-card font-mono text-xs uppercase tracking-wide hover:border-accent/50 transition-colors hidden sm:block">
-            Buscar
+            {t("explore.searchBtn")}
           </button>
         </form>
 
@@ -283,17 +279,17 @@ export function Explore() {
 
           {/* Sort */}
           <Dropdown icon={TrendingUp} label={sortLabel} active={sort !== "popular"}>
-            {SORT_OPTIONS.map(o => (
-              <button key={o.value} onClick={() => changeSort(o.value)}
+            {SORT_KEYS.map(key => (
+              <button key={key} onClick={() => changeSort(key)}
                 className={`w-full text-left px-4 py-2.5 font-mono text-xs uppercase tracking-wide hover:bg-muted transition-colors ${
-                  o.value === sort ? "text-accent" : "text-muted-foreground"
+                  key === sort ? "text-accent" : "text-muted-foreground"
                 }`}>
-                {o.label}
+                {t(`explore.sort.${key}`)}
               </button>
             ))}
           </Dropdown>
 
-          {/* Country — uses its own built-in dropdown */}
+          {/* Country */}
           <CountryPicker value={country} onChange={v => changeCountry(v)} />
 
           {/* Período / Year range */}
@@ -319,7 +315,7 @@ export function Explore() {
                 {/* Presets */}
                 <div className="px-3 pt-3 pb-2">
                   <p className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider mb-2">
-                    Período predefinido
+                    {t("explore.era.presets")}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     <button
@@ -330,12 +326,12 @@ export function Explore() {
                           : "border-border text-muted-foreground hover:border-accent/40"
                       }`}
                     >
-                      Todos
+                      {t("explore.era.all")}
                     </button>
                     {ERA_PRESETS.map(p => {
                       const active = yearFrom === p.from && yearTo === p.to;
                       return (
-                        <button key={p.label}
+                        <button key={p.key}
                           onClick={() => applyPreset(p.from as number | null, p.to as number | null)}
                           className={`px-2.5 py-1 border font-mono text-[10px] uppercase tracking-wide transition-colors ${
                             active
@@ -343,7 +339,7 @@ export function Explore() {
                               : "border-border text-muted-foreground hover:border-accent/40"
                           }`}
                         >
-                          {p.label}
+                          {t(`explore.era.${p.key}`)}
                         </button>
                       );
                     })}
@@ -352,12 +348,12 @@ export function Explore() {
                 {/* Custom range */}
                 <div className="border-t border-border px-3 py-3">
                   <p className="font-mono text-[10px] uppercase text-muted-foreground tracking-wider mb-2">
-                    Intervalo personalizado
+                    {t("explore.era.custom")}
                   </p>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
-                      placeholder="De"
+                      placeholder={t("explore.era.from_placeholder")}
                       min={1900} max={CURRENT_YEAR}
                       value={yearFrom ?? ""}
                       onChange={e => { const v = e.target.value ? Number(e.target.value) : null; setYearFrom(v); reset(); }}
@@ -366,7 +362,7 @@ export function Explore() {
                     <span className="font-mono text-xs text-muted-foreground">–</span>
                     <input
                       type="number"
-                      placeholder="Até"
+                      placeholder={t("explore.era.to_placeholder")}
                       min={1900} max={CURRENT_YEAR}
                       value={yearTo ?? ""}
                       onChange={e => { const v = e.target.value ? Number(e.target.value) : null; setYearTo(v); reset(); }}
@@ -380,32 +376,32 @@ export function Explore() {
 
         </div>
 
-        {/* ── Trend status bar (only for trending/declining) ── */}
+        {/* ── Trend status bar ── */}
         {isTrend && (
           <div className="border border-border bg-card px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
             <div className="flex items-center gap-2 shrink-0">
               <TrendingUp className="w-4 h-4 text-accent shrink-0" />
               <div>
                 <p className="font-bold text-sm leading-none">
-                  {sort === "trending" ? "Tendência de crescimento" : "Tendência de declínio"}
+                  {sort === "trending" ? t("explore.trend.growing") : t("explore.trend.declining")}
                 </p>
                 <p className="font-mono text-[10px] text-muted-foreground mt-0.5">
-                  comparada ao período anterior
+                  {t("explore.trend.compared")}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-1 px-3 py-1.5 border border-accent/40 bg-accent/5 text-accent font-mono text-xs uppercase tracking-wide">
               <Calendar className="w-3.5 h-3.5 mr-1 shrink-0" />
-              {eraActive ? eraLabel : "Todos os tempos"}
+              {eraActive ? eraLabel : t("explore.era.allTime")}
             </div>
 
             <div className="flex items-center gap-4 ml-auto flex-wrap">
               <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-                <ArrowUpRight className="w-3.5 h-3.5 text-accent" /> Em ascensão
+                <ArrowUpRight className="w-3.5 h-3.5 text-accent" /> {t("explore.trend.rising")}
               </span>
               <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-                <ArrowDownRight className="w-3.5 h-3.5 text-destructive" /> Em declínio
+                <ArrowDownRight className="w-3.5 h-3.5 text-destructive" /> {t("explore.trend.declining_tag")}
               </span>
             </div>
           </div>
@@ -417,12 +413,12 @@ export function Explore() {
             {!isLoading && data ? (
               <>
                 <p className="text-xl font-bold uppercase tracking-tight">
-                  {data.total.toLocaleString("pt-BR")} nomes encontrados
+                  {t("explore.namesFound", { count: data.total.toLocaleString() })}
                 </p>
                 <p className="font-mono text-[11px] text-muted-foreground mt-0.5">
                   {[
-                    countryLabel ?? "Todos os países",
-                    eraActive ? eraLabel : "Todos os tempos",
+                    countryLabel ?? t("explore.allCountries"),
+                    eraActive ? eraLabel : t("explore.era.allTime"),
                     sortLabel,
                   ].join(" · ")}
                 </p>
@@ -436,7 +432,7 @@ export function Explore() {
             {hasFilters && (
               <button onClick={clearAll}
                 className="flex items-center gap-1.5 px-3 py-1.5 border border-border text-muted-foreground hover:border-accent/50 font-mono text-xs uppercase tracking-wide transition-colors">
-                <RotateCcw className="w-3 h-3" /> Limpar
+                <RotateCcw className="w-3 h-3" /> {t("explore.clear")}
               </button>
             )}
             <button onClick={() => setGrid(true)}
@@ -470,7 +466,7 @@ export function Explore() {
             }
             {!isLoading && data?.items.length === 0 && (
               <div className="col-span-full py-20 text-center font-mono text-muted-foreground uppercase">
-                Nenhum nome encontrado com esses filtros.
+                {t("explore.noResults")}
               </div>
             )}
           </div>
@@ -500,11 +496,11 @@ export function Explore() {
                       <Users className="w-3 h-3 shrink-0" />
                       {item.count >= 1_000_000
                         ? `${(item.count / 1_000_000).toFixed(1)}M`
-                        : item.count.toLocaleString("pt-BR")}
+                        : item.count.toLocaleString()}
                     </span>
                     <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground w-24 shrink-0">
                       <Globe className="w-3 h-3 shrink-0" />
-                      {item.countries} {item.countries === 1 ? "país" : "países"}
+                      {t("explore.country", { count: item.countries })}
                     </span>
                     <div className="flex-1 min-w-0 hidden sm:block">
                       <Sparkline data={item.sparkline ?? []} rising={rising} uid={`list-${idx}`} />
@@ -515,7 +511,7 @@ export function Explore() {
             }
             {!isLoading && data?.items.length === 0 && (
               <div className="py-20 text-center font-mono text-muted-foreground uppercase">
-                Nenhum nome encontrado com esses filtros.
+                {t("explore.noResults")}
               </div>
             )}
           </div>
@@ -526,14 +522,14 @@ export function Explore() {
           <div className="flex items-center justify-center gap-4 font-mono text-sm pb-4">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
               className="flex items-center gap-1 px-4 py-2 border border-border hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              <ChevronLeft className="w-4 h-4" /> ANTERIOR
+              <ChevronLeft className="w-4 h-4" /> {t("explore.prev")}
             </button>
             <span className="text-muted-foreground">
-              Pág. {page} de {Math.ceil(data.total / (grid ? 20 : 30))}
+              {t("explore.page", { page, total: Math.ceil(data.total / (grid ? 20 : 30)) })}
             </span>
             <button onClick={() => setPage(p => p + 1)} disabled={!data.hasMore}
               className="flex items-center gap-1 px-4 py-2 border border-border hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-              PRÓXIMA <ChevronRight className="w-4 h-4" />
+              {t("explore.next")} <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}

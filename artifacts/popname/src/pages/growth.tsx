@@ -13,6 +13,7 @@ import {
   Legend,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 type HistoryRow = {
   year: number;
@@ -49,13 +50,7 @@ async function fetchTrends(name: string, country: string, days: number) {
   return res.json() as Promise<TrendRow[]>;
 }
 
-const DAYS_OPTIONS = [
-  { value: 7, label: "7 DIAS" },
-  { value: 30, label: "30 DIAS" },
-  { value: 90, label: "90 DIAS" },
-  { value: 180, label: "180 DIAS" },
-  { value: 365, label: "1 ANO" },
-];
+const DAYS_OPTIONS = [7, 30, 90, 180, 365] as const;
 
 const TOOLTIP_STYLE = {
   backgroundColor: "hsl(var(--card))",
@@ -67,6 +62,7 @@ const TOOLTIP_STYLE = {
 };
 
 export function Growth() {
+  const { t } = useTranslation();
   const [histName, setHistName] = useState("João");
   const [histCountry, setHistCountry] = useState("");
   const [histYearFrom, setHistYearFrom] = useState("1980");
@@ -104,10 +100,10 @@ export function Growth() {
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-16">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-4">
-            Crescimento
+            {t("growth.title")}
           </h1>
           <p className="text-muted-foreground font-mono text-sm uppercase tracking-widest">
-            Histórico civil por registro de nascimento · Tendência em tempo real na plataforma.
+            {t("growth.subtitle")}
           </p>
         </div>
       </div>
@@ -119,17 +115,16 @@ export function Growth() {
           <div className="flex items-center gap-4 mb-8">
             <span className="w-3 h-3 bg-accent block" />
             <h2 className="text-2xl font-bold uppercase tracking-tighter">
-              Histórico Civil
+              {t("growth.civHistory")}
             </h2>
           </div>
           <p className="text-muted-foreground text-sm mb-6">
-            Participação percentual do nome no total de nascimentos registrados por ano
-            (dados verificados).
+            {t("growth.civDesc")}
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="col-span-2 md:col-span-1">
-              <label className="text-xs text-muted-foreground uppercase block mb-1">Nome</label>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">{t("growth.nameLabel")}</label>
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={histName}
@@ -139,7 +134,7 @@ export function Growth() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground uppercase block mb-1">País (ISO)</label>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">{t("growth.countryLabel")}</label>
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={histCountry}
@@ -149,7 +144,7 @@ export function Growth() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground uppercase block mb-1">De</label>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">{t("growth.fromLabel")}</label>
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={histYearFrom}
@@ -159,7 +154,7 @@ export function Growth() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground uppercase block mb-1">Até</label>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">{t("growth.toLabel")}</label>
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={histYearTo}
@@ -174,7 +169,7 @@ export function Growth() {
             disabled={!histName.trim()}
             className="mb-8 px-6 py-2 bg-accent text-accent-foreground font-bold text-sm uppercase hover:bg-accent/90 transition-colors disabled:opacity-40"
           >
-            Consultar
+            {t("growth.query")}
           </button>
 
           <HistoryChart data={historyResult.data} loading={historyResult.isLoading} name={histQuery.name} />
@@ -185,17 +180,16 @@ export function Growth() {
           <div className="flex items-center gap-4 mb-8">
             <span className="w-3 h-3 bg-primary block" />
             <h2 className="text-2xl font-bold uppercase tracking-tighter">
-              Tendência na Plataforma
+              {t("growth.platform")}
             </h2>
           </div>
           <p className="text-muted-foreground text-sm mb-6">
-            Volume diário de reivindicações registradas na plataforma (verificados + pendentes).
-            Deixe "Nome" em branco para ver os mais ativos do período.
+            {t("growth.platformDesc")}
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
             <div>
-              <label className="text-xs text-muted-foreground uppercase block mb-1">Nome (opcional)</label>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">{t("growth.nameOptional")}</label>
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={trendName}
@@ -205,7 +199,7 @@ export function Growth() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground uppercase block mb-1">País (ISO)</label>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">{t("growth.countryLabel")}</label>
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={trendCountry}
@@ -215,19 +209,19 @@ export function Growth() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground uppercase block mb-1">Período</label>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">{t("growth.period")}</label>
               <div className="flex flex-wrap gap-1">
                 {DAYS_OPTIONS.map(d => (
                   <button
-                    key={d.value}
-                    onClick={() => setTrendDays(d.value)}
+                    key={d}
+                    onClick={() => setTrendDays(d)}
                     className={`px-3 py-1 font-mono text-xs uppercase border transition-colors ${
-                      trendDays === d.value
+                      trendDays === d
                         ? "border-accent bg-accent text-accent-foreground"
                         : "border-border bg-transparent hover:border-accent/50"
                     }`}
                   >
-                    {d.label}
+                    {t(`growth.days.${d}`)}
                   </button>
                 ))}
               </div>
@@ -237,13 +231,13 @@ export function Growth() {
             onClick={applyTrends}
             className="mb-8 px-6 py-2 bg-primary text-primary-foreground font-bold text-sm uppercase hover:bg-primary/90 transition-colors"
           >
-            Consultar
+            {t("growth.query")}
           </button>
 
           <TrendsChart data={trendsByName} loading={trendsResult.isLoading} />
 
           {!trendsResult.isLoading && trendsResult.data && trendsResult.data.length === 0 && (
-            <EmptyState message="Nenhum dado encontrado para o período e filtros selecionados." />
+            <EmptyState message={t("growth.noData")} />
           )}
         </section>
 
@@ -253,9 +247,10 @@ export function Growth() {
 }
 
 function HistoryChart({ data, loading, name }: { data?: HistoryRow[]; loading: boolean; name: string }) {
+  const { t } = useTranslation();
   if (loading) return <ChartSkeleton />;
   if (!data) return null;
-  if (data.length === 0) return <EmptyState message={`Nenhum registro civil verificado encontrado para "${name}" no período.`} />;
+  if (data.length === 0) return <EmptyState message={t("growth.noHistory", { name })} />;
 
   const chartData = data.map(r => ({
     year: r.year,
@@ -268,9 +263,9 @@ function HistoryChart({ data, loading, name }: { data?: HistoryRow[]; loading: b
   return (
     <div>
       <div className="flex flex-wrap gap-8 mb-6 text-xs font-mono text-muted-foreground uppercase">
-        <Stat label="Anos com dados" value={String(data.length)} />
-        <Stat label="Pico" value={`${peak.year} (${peak.pct}%)`} />
-        <Stat label="Total acumulado" value={data.reduce((s, r) => s + r.total_nome, 0).toLocaleString("pt-BR")} />
+        <Stat label={t("growth.yearsWithData")} value={String(data.length)} />
+        <Stat label={t("growth.peak")} value={`${peak.year} (${peak.pct}%)`} />
+        <Stat label={t("growth.accumulated")} value={data.reduce((s, r) => s + r.total_nome, 0).toLocaleString()} />
       </div>
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -290,8 +285,8 @@ function HistoryChart({ data, loading, name }: { data?: HistoryRow[]; loading: b
             />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
-              formatter={(v: number) => [`${v}%`, "Participação"]}
-              labelFormatter={l => `Ano: ${l}`}
+              formatter={(v: number) => [`${v}%`, t("growth.participation")]}
+              labelFormatter={l => t("growth.year", { val: l })}
             />
             <Area
               type="monotone"
@@ -310,6 +305,7 @@ function HistoryChart({ data, loading, name }: { data?: HistoryRow[]; loading: b
 }
 
 function TrendsChart({ data, loading }: { data: Record<string, TrendRow[]>; loading: boolean }) {
+  const { t } = useTranslation();
   if (loading) return <ChartSkeleton />;
 
   const names = Object.keys(data);
@@ -357,7 +353,7 @@ function TrendsChart({ data, loading }: { data: Record<string, TrendRow[]>; load
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
             formatter={(v: number, name: string) => [`${v}%`, name]}
-            labelFormatter={l => `Dia: ${l}`}
+            labelFormatter={l => t("growth.day", { val: l })}
           />
           {names.length > 1 && <Legend wrapperStyle={{ fontFamily: "monospace", fontSize: 11, textTransform: "uppercase" }} />}
           {names.map((n, idx) => (

@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { Search, Globe, Users, ArrowLeft, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 function getQueryFromURL(): string {
   return new URLSearchParams(window.location.search).get("q") ?? "";
@@ -11,6 +12,7 @@ function getQueryFromURL(): string {
 
 export function SearchResults() {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   const [activeQ, setActiveQ] = useState<string>(getQueryFromURL);
   const [inputQ, setInputQ] = useState<string>(getQueryFromURL);
@@ -55,11 +57,11 @@ export function SearchResults() {
             onClick={() => setLocation("/index")}
             className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors mb-4"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao índice
+            <ArrowLeft className="w-3.5 h-3.5" /> {t("search.backToIndex")}
           </button>
-          <h1 className="text-5xl font-bold tracking-tighter uppercase mb-1">Buscar</h1>
+          <h1 className="text-5xl font-bold tracking-tighter uppercase mb-1">{t("search.title")}</h1>
           <p className="text-muted-foreground text-sm">
-            Encontre nomes no índice global.
+            {t("search.subtitle")}
           </p>
         </div>
       </div>
@@ -74,7 +76,7 @@ export function SearchResults() {
               autoFocus
               value={inputQ}
               onChange={e => setInputQ(e.target.value)}
-              placeholder="Buscar nome..."
+              placeholder={t("search.placeholder")}
               className="bg-transparent font-mono text-sm text-foreground placeholder:text-muted-foreground outline-none flex-1"
             />
             {inputQ && (
@@ -86,14 +88,14 @@ export function SearchResults() {
           </div>
           <button type="submit"
             className="px-4 py-2.5 border border-border bg-card font-mono text-xs uppercase tracking-wide hover:border-accent/50 transition-colors">
-            Buscar
+            {t("search.btn")}
           </button>
         </form>
 
         {/* Empty state */}
         {!activeQ.trim() && (
           <div className="py-20 text-center font-mono text-muted-foreground uppercase text-sm">
-            Digite um nome para começar a busca.
+            {t("search.empty")}
           </div>
         )}
 
@@ -108,7 +110,7 @@ export function SearchResults() {
         {activeQ.trim() && !isLoading && data && data.length > 0 && (
           <>
             <p className="font-mono text-xs text-muted-foreground uppercase tracking-wide">
-              {data.length} resultado{data.length !== 1 ? "s" : ""} para &quot;{activeQ}&quot;
+              {t("search.results", { count: data.length, query: activeQ })}
             </p>
             <div className="border border-border divide-y divide-border">
               {data.map((item) => (
@@ -132,11 +134,11 @@ export function SearchResults() {
                       <Users className="w-3 h-3 shrink-0" />
                       {item.count >= 1_000_000
                         ? `${(item.count / 1_000_000).toFixed(1)}M`
-                        : item.count.toLocaleString("pt-BR")}
+                        : item.count.toLocaleString()}
                     </span>
                     <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
                       <Globe className="w-3 h-3 shrink-0" />
-                      {item.countries} {item.countries === 1 ? "país" : "países"}
+                      {t("search.country", { count: item.countries })}
                     </span>
                   </div>
                 </Link>
@@ -148,7 +150,7 @@ export function SearchResults() {
         {/* No results */}
         {activeQ.trim() && !isLoading && data?.length === 0 && (
           <div className="py-20 text-center font-mono text-muted-foreground uppercase text-sm">
-            Nenhum nome encontrado para &quot;{activeQ}&quot;.
+            {t("search.noResults", { query: activeQ })}
           </div>
         )}
       </div>

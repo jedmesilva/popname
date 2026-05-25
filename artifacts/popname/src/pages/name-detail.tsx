@@ -7,6 +7,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tool
 import { ArrowLeft, Globe, History, Activity, ChevronDown, Loader2, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import * as Flags from "country-flag-icons/react/3x2";
+import { useTranslation } from "react-i18next";
 
 function fmtPct(v: number): string {
   const abs = Math.abs(v);
@@ -28,6 +29,7 @@ type CountryEntry = { country: string; countryCode: string; count: number; perce
 export function NameDetail() {
   const params = useParams();
   const name = params.name || "";
+  const { t } = useTranslation();
 
   const { data: detail, isLoading: loadingDetail } = useGetNameDetail(name, {
     query: { enabled: !!name, queryKey: getGetNameDetailQueryKey(name) }
@@ -71,6 +73,8 @@ export function NameDetail() {
     }
   }
 
+  const granularityKeys = ["daily", "weekly", "monthly", "annual", "decade", "century"] as const;
+
   return (
     <div className="flex-1 container mx-auto px-4 py-12">
       <Button
@@ -79,7 +83,7 @@ export function NameDetail() {
         onClick={() => window.history.back()}
       >
         <ArrowLeft className="mr-2 w-4 h-4" />
-        Voltar
+        {t("nameDetail.back")}
       </Button>
 
       {loadingDetail ? (
@@ -97,13 +101,13 @@ export function NameDetail() {
             <h1 className="text-6xl md:text-8xl font-bold uppercase tracking-tighter mb-4">{detail.name}</h1>
             <div className="flex flex-wrap gap-4 text-sm font-mono text-muted-foreground uppercase tracking-widest">
               <span className="flex items-center gap-2 border border-border px-3 py-1">
-                <Globe className="w-4 h-4" /> {detail.origin || 'Origem desconhecida'}
+                <Globe className="w-4 h-4" /> {detail.origin || t("nameDetail.unknownOrigin")}
               </span>
               <span className="flex items-center gap-2 border border-border px-3 py-1">
-                {detail.gender || 'Gênero não especificado'}
+                {detail.gender || t("nameDetail.unknownGender")}
               </span>
               <span className="flex items-center gap-2 border border-border px-3 py-1">
-                {detail.countries} Países
+                {detail.countries} {t("nameDetail.countries")}
               </span>
             </div>
             {detail.meaning && (
@@ -116,7 +120,7 @@ export function NameDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 border border-border p-8 bg-card">
               <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground mb-8 flex items-center gap-2">
-                <History className="w-4 h-4" /> Histórico de Popularidade
+                <History className="w-4 h-4" /> {t("nameDetail.popHistory")}
               </h2>
               <div className="h-[300px] w-full">
                 {loadingHistory ? (
@@ -142,7 +146,7 @@ export function NameDetail() {
                       <Tooltip
                         contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', fontFamily: 'monospace', textTransform: 'uppercase' }}
                         itemStyle={{ color: 'hsl(var(--foreground))' }}
-                        formatter={(v: any) => [`${Number(v).toFixed(2)}%`, 'Participação']}
+                        formatter={(v: any) => [`${Number(v).toFixed(2)}%`, t("nameDetail.participation")]}
                       />
                       <Line
                         type="monotone"
@@ -156,7 +160,7 @@ export function NameDetail() {
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex h-full items-center justify-center text-muted-foreground uppercase font-mono text-sm">
-                    Sem dados históricos
+                    {t("nameDetail.noHistory")}
                   </div>
                 )}
               </div>
@@ -164,7 +168,7 @@ export function NameDetail() {
 
             <div className="border border-border p-8 bg-card flex flex-col">
               <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground mb-8 flex items-center gap-2">
-                <Globe className="w-4 h-4" /> Top Países
+                <Globe className="w-4 h-4" /> {t("nameDetail.topCountries")}
               </h2>
               <div className="flex-1 flex flex-col gap-6">
                 {displayedCountries.length > 0 ? displayedCountries.map((country, idx) => {
@@ -189,7 +193,7 @@ export function NameDetail() {
                   );
                 }) : (
                   <div className="flex-1 flex items-center justify-center text-muted-foreground uppercase font-mono text-sm">
-                    Sem dados geográficos
+                    {t("nameDetail.noGeo")}
                   </div>
                 )}
               </div>
@@ -202,10 +206,10 @@ export function NameDetail() {
                     className="w-full flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   >
                     {loadingMore
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Carregando...</>
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("nameDetail.loadingMore")}</>
                       : <>
                           <ChevronDown className="w-4 h-4" />
-                          Ver mais países
+                          {t("nameDetail.viewMore")}
                           {totalCountries !== null && (
                             <span className="opacity-50">({loadedCount}/{totalCountries})</span>
                           )}
@@ -216,51 +220,44 @@ export function NameDetail() {
               )}
             </div>
           </div>
-          
+
           <div className="border border-border p-8 bg-card">
-             <div className="flex items-center justify-between mb-8">
-               <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                 <Activity className="w-4 h-4" /> Estatísticas Globais
-               </h2>
-             </div>
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-               <div>
-                 <div className="text-muted-foreground text-xs font-mono uppercase mb-2">Total de Pessoas</div>
-                 <div className="text-4xl font-bold font-mono">{detail.count.toLocaleString('pt-BR')}</div>
-               </div>
-               <div>
-                 <div className="text-muted-foreground text-xs font-mono uppercase mb-2">Presença Global</div>
-                 <div className="text-4xl font-bold font-mono">{detail.countries} Países</div>
-               </div>
-               <div>
-                 <div className="text-muted-foreground text-xs font-mono uppercase mb-2">Variação Histórica</div>
-                 <div className={`text-4xl font-bold font-mono ${detail.changePercent != null ? (detail.changePercent >= 0 ? 'text-accent' : 'text-destructive') : ''}`}>
-                   {detail.changePercent != null
-                     ? `${detail.changePercent >= 0 ? '+' : '-'}${fmtPct(detail.changePercent)}`
-                     : 'N/D'}
-                 </div>
-                 <div className="text-muted-foreground text-[10px] font-mono mt-1">
-                   do primeiro ao último registro
-                 </div>
-               </div>
-             </div>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <Activity className="w-4 h-4" /> {t("nameDetail.globalStats")}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div>
+                <div className="text-muted-foreground text-xs font-mono uppercase mb-2">{t("nameDetail.totalPeople")}</div>
+                <div className="text-4xl font-bold font-mono">{detail.count.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-xs font-mono uppercase mb-2">{t("nameDetail.globalPresence")}</div>
+                <div className="text-4xl font-bold font-mono">{detail.countries} {t("nameDetail.countries")}</div>
+              </div>
+              <div>
+                <div className="text-muted-foreground text-xs font-mono uppercase mb-2">{t("nameDetail.historicalChange")}</div>
+                <div className={`text-4xl font-bold font-mono ${detail.changePercent != null ? (detail.changePercent >= 0 ? 'text-accent' : 'text-destructive') : ''}`}>
+                  {detail.changePercent != null
+                    ? `${detail.changePercent >= 0 ? '+' : '-'}${fmtPct(detail.changePercent)}`
+                    : t("nameDetail.noData")}
+                </div>
+                <div className="text-muted-foreground text-[10px] font-mono mt-1">
+                  {t("nameDetail.fromFirstToLast")}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Registros por período */}
           <div className="border border-border p-8 bg-card">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <BarChart2 className="w-4 h-4" /> Registros por Período
+                <BarChart2 className="w-4 h-4" /> {t("nameDetail.registrations")}
               </h2>
               <div className="flex flex-wrap gap-1">
-                {([
-                  ["daily",   "Diário"],
-                  ["weekly",  "Semanal"],
-                  ["monthly", "Mensal"],
-                  ["annual",  "Anual"],
-                  ["decade",  "Década"],
-                  ["century", "Século"],
-                ] as [string, string][]).map(([key, label]) => (
+                {granularityKeys.map((key) => (
                   <button
                     key={key}
                     onClick={() => setGranularity(key)}
@@ -270,7 +267,7 @@ export function NameDetail() {
                         : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
                     }`}
                   >
-                    {label}
+                    {t(`nameDetail.granularity.${key}`)}
                   </button>
                 ))}
               </div>
@@ -301,7 +298,7 @@ export function NameDetail() {
                     <Tooltip
                       contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', fontFamily: 'monospace', textTransform: 'uppercase', fontSize: 12 }}
                       itemStyle={{ color: 'hsl(var(--foreground))' }}
-                      formatter={(v: any) => [v, "Registros"]}
+                      formatter={(v: any) => [v, t("nameDetail.registrationsLabel")]}
                       labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
                     />
                     <Bar dataKey="count" radius={[2, 2, 0, 0]} maxBarSize={48}>
@@ -317,7 +314,7 @@ export function NameDetail() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex h-full items-center justify-center text-muted-foreground uppercase font-mono text-sm">
-                  Sem registros neste período
+                  {t("nameDetail.noRegistrations")}
                 </div>
               )}
             </div>
@@ -326,7 +323,7 @@ export function NameDetail() {
         </div>
       ) : (
         <div className="text-center py-20 font-mono uppercase text-muted-foreground">
-          Nome não encontrado
+          {t("nameDetail.notFound")}
         </div>
       )}
     </div>
