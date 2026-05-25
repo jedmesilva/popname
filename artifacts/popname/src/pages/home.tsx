@@ -21,8 +21,7 @@ function fmtPct(v: number): string {
   const abs = Math.abs(v);
   if (abs === 0) return "0%";
   if (abs < 0.1) return "<0.1%";
-  if (abs < 1)   return abs.toFixed(1) + "%";
-  return Math.round(abs) + "%";
+  return abs.toFixed(1) + "%";
 }
 
 const COUNTRY_NAMES: Record<string, string> = {
