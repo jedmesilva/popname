@@ -17,14 +17,16 @@ function fmtPct(v: number): string {
 }
 
 const COUNTRY_NAMES: Record<string, string> = {
-  AR: "Argentina", AU: "Austrália", BR: "Brasil", CA: "Canadá",
-  CL: "Chile", CN: "China", CO: "Colômbia", DE: "Alemanha",
-  ES: "Espanha", FR: "França", GB: "Reino Unido", IN: "Índia",
-  IT: "Itália", JP: "Japão", MX: "México", NG: "Nigéria",
-  PT: "Portugal", RU: "Rússia", US: "Estados Unidos", ZA: "África do Sul",
+  AR: "Argentina", AU: "Australia", BR: "Brazil", CA: "Canada",
+  CL: "Chile", CN: "China", CO: "Colombia", DE: "Germany",
+  ES: "Spain", FR: "France", GB: "United Kingdom", IN: "India",
+  IT: "Italy", JP: "Japan", MX: "Mexico", NG: "Nigeria",
+  PT: "Portugal", RU: "Russia", US: "United States", ZA: "South Africa",
 };
 
 type CountryEntry = { country: string; countryCode: string; count: number; percentage: number };
+
+const GRANULARITY_KEYS = ["daily", "weekly", "monthly", "annual", "decade", "century"] as const;
 
 export function NameDetail() {
   const params = useParams();
@@ -32,27 +34,32 @@ export function NameDetail() {
   const { t } = useTranslation();
 
   const { data: detail, isLoading: loadingDetail } = useGetNameDetail(name, {
-    query: { enabled: !!name, queryKey: getGetNameDetailQueryKey(name) }
+    query: { enabled: !!name, queryKey: getGetNameDetailQueryKey(name) },
   });
 
   const { data: history, isLoading: loadingHistory } = useGetNameHistory(name, {
-    query: { enabled: !!name, queryKey: getGetNameHistoryQueryKey(name) }
+    query: { enabled: !!name, queryKey: getGetNameHistoryQueryKey(name) },
   });
 
   const [granularity, setGranularity] = useState<string>("monthly");
-  const { data: registrations, isLoading: loadingReg } = useQuery<{ period: string; label: string; count: number }[]>({
+  const { data: registrations, isLoading: loadingReg } = useQuery<
+    { period: string; label: string; count: number }[]
+  >({
     queryKey: ["registrations", name, granularity],
-    queryFn: () => fetch(`/api/names/${encodeURIComponent(name)}/registrations?granularity=${granularity}`).then(r => r.json()),
+    queryFn: () =>
+      fetch(`/api/names/${encodeURIComponent(name)}/registrations?granularity=${granularity}`).then((r) =>
+        r.json()
+      ),
     enabled: !!name,
   });
 
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE    = 10;
   const INITIAL_SIZE = 5;
   const [extraCountries, setExtraCountries] = useState<CountryEntry[]>([]);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingMore,    setLoadingMore]    = useState(false);
   const [totalCountries, setTotalCountries] = useState<number | null>(null);
 
-  const initialCountries = (detail?.topCountries ?? []) as CountryEntry[];
+  const initialCountries  = (detail?.topCountries ?? []) as CountryEntry[];
   const displayedCountries: CountryEntry[] = [...initialCountries, ...extraCountries];
   const loadedCount = displayedCountries.length;
   const hasMore = totalCountries === null
@@ -63,17 +70,14 @@ export function NameDetail() {
     setLoadingMore(true);
     try {
       const offset = extraCountries.length === 0 ? INITIAL_SIZE : loadedCount;
-      const url = `/api/names/${encodeURIComponent(name)}/countries?limit=${PAGE_SIZE}&offset=${offset}`;
-      const res = await fetch(url);
+      const res  = await fetch(`/api/names/${encodeURIComponent(name)}/countries?limit=${PAGE_SIZE}&offset=${offset}`);
       const data: { total: number; items: CountryEntry[] } = await res.json();
       setTotalCountries(data.total);
-      setExtraCountries(prev => [...prev, ...data.items]);
+      setExtraCountries((prev) => [...prev, ...data.items]);
     } finally {
       setLoadingMore(false);
     }
   }
-
-  const granularityKeys = ["daily", "weekly", "monthly", "annual", "decade", "century"] as const;
 
   return (
     <div className="flex-1 container mx-auto px-4 py-12">
@@ -90,13 +94,13 @@ export function NameDetail() {
         <div className="space-y-8">
           <Skeleton className="h-20 w-1/3" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
+            <Skeleton className="h-32" /><Skeleton className="h-32" /><Skeleton className="h-32" />
           </div>
         </div>
       ) : detail ? (
         <div className="space-y-16">
+
+          {/* Header */}
           <header>
             <h1 className="text-6xl md:text-8xl font-bold uppercase tracking-tighter mb-4">{detail.name}</h1>
             <div className="flex flex-wrap gap-4 text-sm font-mono text-muted-foreground uppercase tracking-widest">
@@ -117,6 +121,7 @@ export function NameDetail() {
             )}
           </header>
 
+          {/* Popularity history + Top countries */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 border border-border p-8 bg-card">
               <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground mb-8 flex items-center gap-2">
@@ -131,30 +136,27 @@ export function NameDetail() {
                       <XAxis
                         dataKey="year"
                         stroke="#888"
-                        tick={{ fill: '#888', fontSize: 12, fontFamily: 'monospace' }}
-                        axisLine={false}
-                        tickLine={false}
+                        tick={{ fill: "#888", fontSize: 12, fontFamily: "monospace" }}
+                        axisLine={false} tickLine={false}
                       />
                       <YAxis
                         stroke="#888"
-                        tick={{ fill: '#888', fontSize: 12, fontFamily: 'monospace' }}
-                        axisLine={false}
-                        tickLine={false}
+                        tick={{ fill: "#888", fontSize: 12, fontFamily: "monospace" }}
+                        axisLine={false} tickLine={false}
                         tickFormatter={(v) => `${Number(v).toFixed(1)}%`}
-                        domain={[0, 'auto']}
+                        domain={[0, "auto"]}
                       />
                       <Tooltip
-                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', fontFamily: 'monospace', textTransform: 'uppercase' }}
-                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                        contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontFamily: "monospace", textTransform: "uppercase" }}
+                        itemStyle={{ color: "hsl(var(--foreground))" }}
                         formatter={(v: any) => [`${Number(v).toFixed(2)}%`, t("nameDetail.participation")]}
                       />
                       <Line
-                        type="monotone"
-                        dataKey="pct"
+                        type="monotone" dataKey="pct"
                         stroke={detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))"}
                         strokeWidth={2}
                         dot={{ r: 3, fill: detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))" }}
-                        activeDot={{ r: 6, fill: detail.changePercent == null || detail.changePercent >= 0 ? "hsl(var(--accent))" : "hsl(var(--destructive))" }}
+                        activeDot={{ r: 6 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -171,33 +173,31 @@ export function NameDetail() {
                 <Globe className="w-4 h-4" /> {t("nameDetail.topCountries")}
               </h2>
               <div className="flex-1 flex flex-col gap-6">
-                {displayedCountries.length > 0 ? displayedCountries.map((country, idx) => {
-                  const FlagComponent = (Flags as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[country.countryCode ?? ""];
-                  const countryName = COUNTRY_NAMES[country.countryCode ?? ""] ?? country.country;
-                  return (
-                    <div key={`${country.countryCode}-${idx}`} className="space-y-2">
-                      <div className="flex justify-between font-mono text-sm uppercase">
-                        <span className="flex items-center gap-2">
-                          {FlagComponent && <FlagComponent className="w-5 h-auto rounded-sm shrink-0" />}
-                          <span>{idx + 1}. {countryName}</span>
-                        </span>
-                        <span className="text-muted-foreground">{country.percentage}%</span>
+                {displayedCountries.length > 0 ? (
+                  displayedCountries.map((country, idx) => {
+                    const FlagComponent = (Flags as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[country.countryCode ?? ""];
+                    const countryName   = COUNTRY_NAMES[country.countryCode ?? ""] ?? country.country;
+                    return (
+                      <div key={`${country.countryCode}-${idx}`} className="space-y-2">
+                        <div className="flex justify-between font-mono text-sm uppercase">
+                          <span className="flex items-center gap-2">
+                            {FlagComponent && <FlagComponent className="w-5 h-auto rounded-sm shrink-0" />}
+                            <span>{idx + 1}. {countryName}</span>
+                          </span>
+                          <span className="text-muted-foreground">{country.percentage}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-muted overflow-hidden">
+                          <div className="h-full bg-accent" style={{ width: `${country.percentage}%` }} />
+                        </div>
                       </div>
-                      <div className="h-2 w-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full bg-accent"
-                          style={{ width: `${country.percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                }) : (
+                    );
+                  })
+                ) : (
                   <div className="flex-1 flex items-center justify-center text-muted-foreground uppercase font-mono text-sm">
                     {t("nameDetail.noGeo")}
                   </div>
                 )}
               </div>
-
               {hasMore && (
                 <div className="mt-6 pt-6 border-t border-border">
                   <button
@@ -205,28 +205,28 @@ export function NameDetail() {
                     disabled={loadingMore}
                     className="w-full flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                   >
-                    {loadingMore
-                      ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("nameDetail.loadingMore")}</>
-                      : <>
-                          <ChevronDown className="w-4 h-4" />
-                          {t("nameDetail.viewMore")}
-                          {totalCountries !== null && (
-                            <span className="opacity-50">({loadedCount}/{totalCountries})</span>
-                          )}
-                        </>
-                    }
+                    {loadingMore ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> {t("nameDetail.loadingMore")}</>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        {t("nameDetail.viewMore")}
+                        {totalCountries !== null && (
+                          <span className="opacity-50">({loadedCount}/{totalCountries})</span>
+                        )}
+                      </>
+                    )}
                   </button>
                 </div>
               )}
             </div>
           </div>
 
+          {/* Global stats */}
           <div className="border border-border p-8 bg-card">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Activity className="w-4 h-4" /> {t("nameDetail.globalStats")}
-              </h2>
-            </div>
+            <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground mb-8 flex items-center gap-2">
+              <Activity className="w-4 h-4" /> {t("nameDetail.globalStats")}
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <div className="text-muted-foreground text-xs font-mono uppercase mb-2">{t("nameDetail.totalPeople")}</div>
@@ -238,26 +238,24 @@ export function NameDetail() {
               </div>
               <div>
                 <div className="text-muted-foreground text-xs font-mono uppercase mb-2">{t("nameDetail.historicalChange")}</div>
-                <div className={`text-4xl font-bold font-mono ${detail.changePercent != null ? (detail.changePercent >= 0 ? 'text-accent' : 'text-destructive') : ''}`}>
+                <div className={`text-4xl font-bold font-mono ${detail.changePercent != null ? (detail.changePercent >= 0 ? "text-accent" : "text-destructive") : ""}`}>
                   {detail.changePercent != null
-                    ? `${detail.changePercent >= 0 ? '+' : '-'}${fmtPct(detail.changePercent)}`
+                    ? `${detail.changePercent >= 0 ? "+" : "-"}${fmtPct(detail.changePercent)}`
                     : t("nameDetail.noData")}
                 </div>
-                <div className="text-muted-foreground text-[10px] font-mono mt-1">
-                  {t("nameDetail.fromFirstToLast")}
-                </div>
+                <div className="text-muted-foreground text-[10px] font-mono mt-1">{t("nameDetail.fromFirstToLast")}</div>
               </div>
             </div>
           </div>
 
-          {/* Registros por período */}
+          {/* Records by period */}
           <div className="border border-border p-8 bg-card">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               <h2 className="text-sm font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                 <BarChart2 className="w-4 h-4" /> {t("nameDetail.registrations")}
               </h2>
               <div className="flex flex-wrap gap-1">
-                {granularityKeys.map((key) => (
+                {GRANULARITY_KEYS.map((key) => (
                   <button
                     key={key}
                     onClick={() => setGranularity(key)}
@@ -282,32 +280,25 @@ export function NameDetail() {
                     <XAxis
                       dataKey="label"
                       stroke="#888"
-                      tick={{ fill: '#888', fontSize: 11, fontFamily: 'monospace' }}
-                      axisLine={false}
-                      tickLine={false}
+                      tick={{ fill: "#888", fontSize: 11, fontFamily: "monospace" }}
+                      axisLine={false} tickLine={false}
                       interval="preserveStartEnd"
                     />
                     <YAxis
                       stroke="#888"
-                      tick={{ fill: '#888', fontSize: 11, fontFamily: 'monospace' }}
-                      axisLine={false}
-                      tickLine={false}
-                      allowDecimals={false}
-                      width={32}
+                      tick={{ fill: "#888", fontSize: 11, fontFamily: "monospace" }}
+                      axisLine={false} tickLine={false}
+                      allowDecimals={false} width={32}
                     />
                     <Tooltip
-                      contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', fontFamily: 'monospace', textTransform: 'uppercase', fontSize: 12 }}
-                      itemStyle={{ color: 'hsl(var(--foreground))' }}
+                      contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))", fontFamily: "monospace", textTransform: "uppercase", fontSize: 12 }}
+                      itemStyle={{ color: "hsl(var(--foreground))" }}
                       formatter={(v: any) => [v, t("nameDetail.registrationsLabel")]}
-                      labelStyle={{ color: 'hsl(var(--muted-foreground))' }}
+                      labelStyle={{ color: "hsl(var(--muted-foreground))" }}
                     />
                     <Bar dataKey="count" radius={[2, 2, 0, 0]} maxBarSize={48}>
                       {(registrations ?? []).map((_: any, i: number) => (
-                        <Cell
-                          key={i}
-                          fill="hsl(var(--accent))"
-                          fillOpacity={0.85}
-                        />
+                        <Cell key={i} fill="hsl(var(--accent))" fillOpacity={0.85} />
                       ))}
                     </Bar>
                   </BarChart>

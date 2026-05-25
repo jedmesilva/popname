@@ -26,11 +26,11 @@ function fmtPct(v: number): string {
 }
 
 const COUNTRY_NAMES: Record<string, string> = {
-  AR: "Argentina", AU: "Austrália", BR: "Brasil", CA: "Canadá",
-  CL: "Chile", CN: "China", CO: "Colômbia", DE: "Alemanha",
-  ES: "Espanha", FR: "França", GB: "Reino Unido", IN: "Índia",
-  IT: "Itália", JP: "Japão", MX: "México", NG: "Nigéria",
-  PT: "Portugal", RU: "Rússia", US: "Estados Unidos", ZA: "África do Sul",
+  AR: "Argentina", AU: "Australia", BR: "Brazil", CA: "Canada",
+  CL: "Chile", CN: "China", CO: "Colombia", DE: "Germany",
+  ES: "Spain", FR: "France", GB: "United Kingdom", IN: "India",
+  IT: "Italy", JP: "Japan", MX: "Mexico", NG: "Nigeria",
+  PT: "Portugal", RU: "Russia", US: "United States", ZA: "South Africa",
 };
 
 export function Home() {
@@ -39,7 +39,7 @@ export function Home() {
   const { t } = useTranslation();
 
   const { data: stats, isLoading: loadingStats } = useGetIndexStats({
-    query: { queryKey: getGetIndexStatsQueryKey() }
+    query: { queryKey: getGetIndexStatsQueryKey() },
   });
 
   const { data: trending, isLoading: loadingTrending } = useGetTrendingNames(
@@ -53,11 +53,11 @@ export function Home() {
   );
 
   const { data: featured } = useGetFeaturedName({
-    query: { queryKey: getGetFeaturedNameQueryKey() }
+    query: { queryKey: getGetFeaturedNameQueryKey() },
   });
 
   const { data: decades, isLoading: loadingDecades } = useGetNamesByDecade({
-    query: { queryKey: getGetNamesByDecadeQueryKey() }
+    query: { queryKey: getGetNamesByDecadeQueryKey() },
   });
 
   const { data: rare } = useGetRareNames(
@@ -70,20 +70,21 @@ export function Home() {
     { query: { queryKey: getGetPopularNamesQueryKey({ limit: 6 }) } }
   );
 
-  const { data: namesByCountry, isLoading: loadingByCountry } = useQuery<{ name: string; country: string }[]>({
+  const { data: namesByCountry, isLoading: loadingByCountry } = useQuery<
+    { name: string; country: string }[]
+  >({
     queryKey: ["names-by-country"],
     queryFn: () => fetch("/api/names/by-country").then((r) => r.json()),
   });
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (query.trim()) {
-      setLocation(`/nome/${encodeURIComponent(query.trim())}`);
-    }
+    if (query.trim()) setLocation(`/name/${encodeURIComponent(query.trim())}`);
   }
 
   return (
     <div className="flex-1 flex flex-col">
+
       {/* Hero */}
       <section className="py-16 md:py-32 border-b border-border overflow-hidden">
         <div className="container mx-auto px-4 max-w-5xl text-center">
@@ -116,9 +117,7 @@ export function Home() {
 
           <div className="grid grid-cols-3 gap-2 md:flex md:items-center md:gap-8 justify-center mb-8 md:mb-12 text-xs md:text-sm font-mono text-muted-foreground max-w-sm md:max-w-none mx-auto">
             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-              <span className="text-foreground font-bold">
-                {stats?.countriesCovered ?? 195}
-              </span>
+              <span className="text-foreground font-bold">{stats?.countriesCovered ?? 195}</span>
               <span>{t("home.countries")}</span>
             </div>
             <span className="hidden md:block w-px h-4 bg-border" />
@@ -136,9 +135,7 @@ export function Home() {
             </div>
             <span className="hidden md:block w-px h-4 bg-border" />
             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-              <span className="text-accent font-bold">
-                +{(stats?.dailyGrowth ?? 12481).toLocaleString()}
-              </span>
+              <span className="text-accent font-bold">+{(stats?.dailyGrowth ?? 12481).toLocaleString()}</span>
               <span>{t("home.today")}</span>
             </div>
           </div>
@@ -164,7 +161,7 @@ export function Home() {
             </button>
           </form>
 
-          {/* Popular now chips */}
+          {/* Popular chips */}
           <div className="flex flex-wrap justify-center gap-2 mt-6">
             <span className="text-xs text-muted-foreground font-mono uppercase mr-2 leading-7">
               {t("home.popularNow")}
@@ -172,7 +169,7 @@ export function Home() {
             {(popular ?? []).map((n) => (
               <Link
                 key={n.name}
-                href={`/nome/${n.name}`}
+                href={`/name/${n.name}`}
                 data-testid={`chip-name-${n.name}`}
                 className="text-xs font-mono uppercase px-3 py-1 border border-border hover:border-accent hover:text-accent transition-colors"
               >
@@ -192,23 +189,18 @@ export function Home() {
             </p>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
-                <h2
-                  className="text-6xl md:text-8xl font-bold tracking-tighter mb-4"
-                  data-testid="text-featured-name"
-                >
+                <h2 className="text-6xl md:text-8xl font-bold tracking-tighter mb-4" data-testid="text-featured-name">
                   {featured.name?.toUpperCase()}
                 </h2>
                 <div className="flex items-center gap-6 text-muted-foreground font-mono text-sm mb-4">
-                  <span>{(featured.count).toLocaleString()} {t("home.featured.people")}</span>
+                  <span>{featured.count.toLocaleString()} {t("home.featured.people")}</span>
                   <span>{featured.countries} {t("home.featured.countries")}</span>
                   {featured.changePercent !== null && (
-                    <span className="text-accent">
-                      +{featured.changePercent}% {t("home.featured.years5")}
-                    </span>
+                    <span className="text-accent">+{featured.changePercent}% {t("home.featured.years5")}</span>
                   )}
                 </div>
                 <Link
-                  href={`/nome/${featured.name}`}
+                  href={`/name/${featured.name}`}
                   data-testid="link-featured-detail"
                   className="inline-flex items-center gap-2 text-sm font-mono uppercase tracking-widest border border-border px-4 py-2 hover:border-accent hover:text-accent transition-colors"
                 >
@@ -230,10 +222,7 @@ export function Home() {
                           <span className="font-mono text-sm truncate">{countryName}</span>
                         </div>
                         <div className="flex-1 h-1 bg-border rounded-full">
-                          <div
-                            className="h-1 bg-accent rounded-full"
-                            style={{ width: `${c.percentage}%` }}
-                          />
+                          <div className="h-1 bg-accent rounded-full" style={{ width: `${c.percentage}%` }} />
                         </div>
                         <div className="font-mono text-sm text-muted-foreground w-10 text-right">
                           {c.percentage}%
@@ -257,12 +246,10 @@ export function Home() {
                 <TrendingUp className="w-5 h-5 text-accent" />
                 {t("home.trending.title")}
               </h2>
-              <p className="text-muted-foreground text-sm font-mono mt-1">
-                {t("home.trending.period")}
-              </p>
+              <p className="text-muted-foreground text-sm font-mono mt-1">{t("home.trending.period")}</p>
             </div>
             <Link
-              href="/tendencias"
+              href="/trends"
               className="text-xs font-mono uppercase tracking-widest text-accent hover:underline flex items-center gap-1"
             >
               {t("home.trending.viewAll")} <ArrowUpRight className="w-3 h-3" />
@@ -272,15 +259,15 @@ export function Home() {
             {loadingTrending
               ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)
               : Array.isArray(trending) && trending.map((item, idx) => (
-                <TrendRowSmall
-                  key={item.name}
-                  name={item.name}
-                  rank={idx + 1}
-                  change={item.changePercent}
-                  sparkline={item.sparkline ?? []}
-                  rising
-                />
-              ))}
+                  <TrendRowSmall
+                    key={item.name}
+                    name={item.name}
+                    rank={idx + 1}
+                    change={item.changePercent}
+                    sparkline={item.sparkline ?? []}
+                    rising
+                  />
+                ))}
           </div>
         </div>
       </section>
@@ -289,10 +276,9 @@ export function Home() {
       <section className="py-16 border-b border-border bg-card">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold uppercase tracking-tighter mb-2">{t("home.explore.title")}</h2>
-          <p className="text-muted-foreground text-sm font-mono mb-12">
-            {t("home.explore.subtitle")}
-          </p>
+          <p className="text-muted-foreground text-sm font-mono mb-12">{t("home.explore.subtitle")}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
             {/* By decade */}
             <div className="border border-border p-6 flex flex-col">
               <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
@@ -302,19 +288,19 @@ export function Home() {
                 {loadingDecades
                   ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-5 w-full" />)
                   : decades?.slice(-6).map((d) => (
-                    <div
-                      key={d.decade}
-                      className={`flex items-center gap-3 font-mono text-sm ${
-                        d.decade >= 2020 ? "bg-accent text-black px-2 py-1 font-bold" : ""
-                      }`}
-                    >
-                      <span className="text-muted-foreground w-10">{d.decade}s</span>
-                      <span className="uppercase">{d.names[0]}</span>
-                    </div>
-                  ))}
+                      <div
+                        key={d.decade}
+                        className={`flex items-center gap-3 font-mono text-sm ${
+                          d.decade >= 2020 ? "bg-accent text-black px-2 py-1 font-bold" : ""
+                        }`}
+                      >
+                        <span className="text-muted-foreground w-10">{d.decade}s</span>
+                        <span className="uppercase">{d.names[0]}</span>
+                      </div>
+                    ))}
               </div>
               <Link
-                href="/index"
+                href="/explore"
                 data-testid="link-explore-decade"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
@@ -331,25 +317,24 @@ export function Home() {
                 {loadingByCountry
                   ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-5 w-full" />)
                   : (Array.isArray(namesByCountry) ? namesByCountry : []).map((item) => {
-                    const FlagComponent = (Flags as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[item.country];
-                    return (
-                      <div key={`${item.name}-${item.country}`} className="flex items-center gap-2 font-mono text-sm">
-                        {FlagComponent
-                          ? <FlagComponent className="w-5 h-auto rounded-sm shrink-0" />
-                          : <span className="text-muted-foreground text-xs w-5">{item.country}</span>
-                        }
-                        <Link
-                          href={`/nome/${item.name}`}
-                          className="uppercase hover:text-accent transition-colors flex-1"
-                        >
-                          {item.name}
-                        </Link>
-                      </div>
-                    );
-                  })}
+                      const FlagComponent = (Flags as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[item.country];
+                      return (
+                        <div key={`${item.name}-${item.country}`} className="flex items-center gap-2 font-mono text-sm">
+                          {FlagComponent
+                            ? <FlagComponent className="w-5 h-auto rounded-sm shrink-0" />
+                            : <span className="text-muted-foreground text-xs w-5">{item.country}</span>}
+                          <Link
+                            href={`/name/${item.name}`}
+                            className="uppercase hover:text-accent transition-colors flex-1"
+                          >
+                            {item.name}
+                          </Link>
+                        </div>
+                      );
+                    })}
               </div>
               <Link
-                href="/paises"
+                href="/countries"
                 data-testid="link-explore-countries"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
@@ -371,7 +356,7 @@ export function Home() {
                 </div>
               )}
               <Link
-                href="/index"
+                href="/explore"
                 data-testid="link-explore-rare"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
@@ -391,15 +376,17 @@ export function Home() {
                 {loadingDeclining
                   ? Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-5 w-full" />)
                   : declining?.slice(0, 5).map((n, i) => (
-                    <div key={n.name} className="flex items-center justify-between text-sm font-mono">
-                      <span className="text-muted-foreground w-5">{String(i + 1).padStart(2, "0")}</span>
-                      <span className="flex-1 ml-3 uppercase">{n.name}</span>
-                      <span className="text-destructive">{n.changePercent !== null ? `-${fmtPct(n.changePercent)}` : "—"}</span>
-                    </div>
-                  ))}
+                      <div key={n.name} className="flex items-center justify-between text-sm font-mono">
+                        <span className="text-muted-foreground w-5">{String(i + 1).padStart(2, "0")}</span>
+                        <span className="flex-1 ml-3 uppercase">{n.name}</span>
+                        <span className="text-destructive">
+                          {n.changePercent !== null ? `-${fmtPct(n.changePercent)}` : "—"}
+                        </span>
+                      </div>
+                    ))}
               </div>
               <Link
-                href="/tendencias"
+                href="/trends"
                 data-testid="link-explore-declining"
                 className="text-xs font-mono uppercase tracking-widest text-accent hover:underline mt-4 flex items-center gap-1"
               >
@@ -413,14 +400,10 @@ export function Home() {
       {/* Claim CTA */}
       <section className="py-24 border-b border-border">
         <div className="container mx-auto px-4 text-center max-w-3xl">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tighter mb-6">
-            {t("home.cta.title")}
-          </h2>
-          <p className="text-muted-foreground font-mono text-sm mb-8">
-            {t("home.cta.subtitle")}
-          </p>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tighter mb-6">{t("home.cta.title")}</h2>
+          <p className="text-muted-foreground font-mono text-sm mb-8">{t("home.cta.subtitle")}</p>
           <Link
-            href="/reivindicar"
+            href="/claim"
             data-testid="button-claim-cta"
             className="inline-flex items-center gap-3 bg-primary text-primary-foreground font-bold px-8 py-4 hover:bg-primary/90 transition-colors uppercase tracking-widest font-mono"
           >
@@ -446,13 +429,19 @@ function SvgSparkline({ values, color }: { values: number[]; color: string }) {
   });
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} fill="none">
-      <polyline points={points.join(" ")} stroke={color} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+      <polyline
+        points={points.join(" ")}
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function TrendRowSmall({
-  name, rank, change, sparkline, rising
+  name, rank, change, sparkline, rising,
 }: {
   name: string;
   rank: number;
@@ -461,10 +450,9 @@ function TrendRowSmall({
   rising: boolean;
 }) {
   const color = rising ? "hsl(var(--accent))" : "hsl(var(--destructive))";
-
   return (
     <Link
-      href={`/nome/${name}`}
+      href={`/name/${name}`}
       data-testid={`trend-row-${name}`}
       className="flex items-center gap-4 px-4 py-3 border border-transparent hover:border-border hover:bg-card transition-colors group"
     >
@@ -473,11 +461,7 @@ function TrendRowSmall({
       <div className="w-16 h-6 hidden sm:block">
         <SvgSparkline values={sparkline} color={color} />
       </div>
-      <span
-        className={`font-mono text-sm font-bold w-16 text-right ${
-          rising ? "text-accent" : "text-destructive"
-        }`}
-      >
+      <span className={`font-mono text-sm font-bold w-16 text-right ${rising ? "text-accent" : "text-destructive"}`}>
         {change === null ? "—" : `${change >= 0 ? "+" : "-"}${fmtPct(change)}`}
       </span>
     </Link>

@@ -6,14 +6,14 @@ import Flags from "country-flag-icons/react/3x2";
 import { useTranslation } from "react-i18next";
 
 const TOP_COUNTRIES = [
-  { code: "BR", nameKey: "Brasil" },
-  { code: "US", nameKey: "Estados Unidos" },
-  { code: "IN", nameKey: "Índia" },
-  { code: "JP", nameKey: "Japão" },
-  { code: "CN", nameKey: "China" },
-  { code: "FR", nameKey: "França" },
-  { code: "DE", nameKey: "Alemanha" },
-  { code: "RU", nameKey: "Rússia" },
+  { code: "BR", name: "Brazil" },
+  { code: "US", name: "United States" },
+  { code: "IN", name: "India" },
+  { code: "JP", name: "Japan" },
+  { code: "CN", name: "China" },
+  { code: "FR", name: "France" },
+  { code: "DE", name: "Germany" },
+  { code: "RU", name: "Russia" },
 ];
 
 function CountryFlag({ code, className }: { code: string; className?: string }) {
@@ -39,7 +39,6 @@ export function Countries() {
           <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-8">
             {t("countries.title")}
           </h1>
-
           <div className="flex flex-wrap gap-2">
             {TOP_COUNTRIES.map((c) => (
               <button
@@ -52,7 +51,7 @@ export function Countries() {
                 }`}
               >
                 <CountryFlag code={c.code} className="w-5 h-auto" />
-                {c.nameKey}
+                {c.name}
               </button>
             ))}
           </div>
@@ -65,7 +64,7 @@ export function Countries() {
             <CountryFlag code={selected.code} className="w-10 h-auto border border-border" />
           )}
           <h2 className="text-xl font-mono uppercase tracking-widest text-muted-foreground">
-            {t("countries.mostPopular", { country: selected?.nameKey })}
+            {t("countries.mostPopular", { country: selected?.name })}
           </h2>
         </div>
 
@@ -73,23 +72,23 @@ export function Countries() {
           {isLoading
             ? Array(20).fill(0).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
             : popular?.map((item, idx) => (
-              <Link
-                key={item.name}
-                href={`/nome/${item.name}`}
-                className="border border-border p-4 hover:border-accent transition-colors bg-card group"
-              >
-                <div className="font-mono text-xs text-muted-foreground mb-2">#{idx + 1}</div>
-                <div
-                  className="font-bold text-xl uppercase group-hover:text-accent transition-colors truncate"
-                  title={item.name}
+                <Link
+                  key={item.name}
+                  href={`/name/${item.name}`}
+                  className="border border-border p-4 hover:border-accent transition-colors bg-card group"
                 >
-                  {item.name}
-                </div>
-                <div className="font-mono text-xs text-muted-foreground mt-2">
-                  {item.count.toLocaleString()} {t("countries.records")}
-                </div>
-              </Link>
-            ))}
+                  <div className="font-mono text-xs text-muted-foreground mb-2">#{idx + 1}</div>
+                  <div
+                    className="font-bold text-xl uppercase group-hover:text-accent transition-colors truncate"
+                    title={item.name}
+                  >
+                    {item.name}
+                  </div>
+                  <div className="font-mono text-xs text-muted-foreground mt-2">
+                    {item.count.toLocaleString()} {t("countries.records")}
+                  </div>
+                </Link>
+              ))}
           {popular?.length === 0 && (
             <div className="col-span-full py-20 text-center font-mono text-muted-foreground uppercase">
               {t("countries.noData")}

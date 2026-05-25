@@ -36,38 +36,33 @@ export function SearchResults() {
     e.preventDefault();
     const q = inputQ.trim();
     if (!q) return;
-    const url = `/buscar?q=${encodeURIComponent(q)}`;
-    window.history.pushState({}, "", url);
+    window.history.pushState({}, "", `/search?q=${encodeURIComponent(q)}`);
     setActiveQ(q);
   }
 
   function clearSearch() {
     setInputQ("");
     setActiveQ("");
-    window.history.pushState({}, "", "/buscar");
+    window.history.pushState({}, "", "/search");
   }
 
   return (
     <div className="flex-1 flex flex-col">
-
       {/* Header */}
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 pt-8 pb-6">
           <button
-            onClick={() => setLocation("/index")}
+            onClick={() => setLocation("/explore")}
             className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors mb-4"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> {t("search.backToIndex")}
           </button>
           <h1 className="text-5xl font-bold tracking-tighter uppercase mb-1">{t("search.title")}</h1>
-          <p className="text-muted-foreground text-sm">
-            {t("search.subtitle")}
-          </p>
+          <p className="text-muted-foreground text-sm">{t("search.subtitle")}</p>
         </div>
       </div>
 
       <div className="flex-1 container mx-auto px-4 py-5 flex flex-col gap-6">
-
         {/* Search form */}
         <form onSubmit={handleSearch} className="flex gap-3">
           <div className="flex-1 flex items-center gap-3 border border-border bg-card px-4 py-2.5 focus-within:border-accent/60 transition-colors">
@@ -75,19 +70,24 @@ export function SearchResults() {
             <input
               autoFocus
               value={inputQ}
-              onChange={e => setInputQ(e.target.value)}
+              onChange={(e) => setInputQ(e.target.value)}
               placeholder={t("search.placeholder")}
               className="bg-transparent font-mono text-sm text-foreground placeholder:text-muted-foreground outline-none flex-1"
             />
             {inputQ && (
-              <button type="button" onClick={clearSearch}
-                className="text-muted-foreground hover:text-foreground transition-colors">
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
-          <button type="submit"
-            className="px-4 py-2.5 border border-border bg-card font-mono text-xs uppercase tracking-wide hover:border-accent/50 transition-colors">
+          <button
+            type="submit"
+            className="px-4 py-2.5 border border-border bg-card font-mono text-xs uppercase tracking-wide hover:border-accent/50 transition-colors"
+          >
             {t("search.btn")}
           </button>
         </form>
@@ -116,7 +116,7 @@ export function SearchResults() {
               {data.map((item) => (
                 <Link
                   key={item.name}
-                  href={`/nome/${item.name}`}
+                  href={`/name/${item.name}`}
                   className="flex items-center gap-4 px-4 py-4 hover:bg-muted/30 transition-colors group"
                 >
                   <div className="flex-1 min-w-0">

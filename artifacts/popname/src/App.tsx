@@ -14,12 +14,14 @@ import { Trends } from "@/pages/trends";
 import { Claim } from "@/pages/claim";
 import { SearchResults } from "@/pages/search";
 import { Growth } from "@/pages/growth";
+import { Countries } from "@/pages/countries";
+import { Forge } from "@/pages/forge";
 
 const queryClient = new QueryClient();
 
 function ThemeSetup() {
   useEffect(() => {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.add("dark");
   }, []);
   return null;
 }
@@ -38,12 +40,14 @@ function Router() {
       <ScrollToTop />
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/nome/:name" component={NameDetail} />
-        <Route path="/index" component={Explore} />
-        <Route path="/tendencias" component={Trends} />
-        <Route path="/reivindicar" component={Claim} />
-        <Route path="/buscar" component={SearchResults} />
-        <Route path="/crescimento" component={Growth} />
+        <Route path="/name/:name" component={NameDetail} />
+        <Route path="/explore" component={Explore} />
+        <Route path="/trends" component={Trends} />
+        <Route path="/claim" component={Claim} />
+        <Route path="/search" component={SearchResults} />
+        <Route path="/growth" component={Growth} />
+        <Route path="/countries" component={Countries} />
+        <Route path="/forge" component={Forge} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

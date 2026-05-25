@@ -1,16 +1,9 @@
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
+  AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
@@ -33,9 +26,9 @@ type TrendRow = {
 
 async function fetchHistory(name: string, country: string, yearFrom: string, yearTo: string) {
   const p = new URLSearchParams({ name });
-  if (country) p.set("country", country);
+  if (country)  p.set("country",  country);
   if (yearFrom) p.set("yearFrom", yearFrom);
-  if (yearTo) p.set("yearTo", yearTo);
+  if (yearTo)   p.set("yearTo",   yearTo);
   const res = await fetch(`/api/views/name-history?${p}`);
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<HistoryRow[]>;
@@ -43,7 +36,7 @@ async function fetchHistory(name: string, country: string, yearFrom: string, yea
 
 async function fetchTrends(name: string, country: string, days: number) {
   const p = new URLSearchParams({ days: String(days) });
-  if (name) p.set("name", name);
+  if (name)    p.set("name",    name);
   if (country) p.set("country", country);
   const res = await fetch(`/api/views/name-trends?${p}`);
   if (!res.ok) throw new Error(await res.text());
@@ -63,15 +56,18 @@ const TOOLTIP_STYLE = {
 
 export function Growth() {
   const { t } = useTranslation();
-  const [histName, setHistName] = useState("João");
+
+  const [histName,    setHistName]    = useState("João");
   const [histCountry, setHistCountry] = useState("");
   const [histYearFrom, setHistYearFrom] = useState("1980");
-  const [histYearTo, setHistYearTo] = useState("2024");
-  const [histQuery, setHistQuery] = useState({ name: "João", country: "", yearFrom: "1980", yearTo: "2024" });
+  const [histYearTo,   setHistYearTo]   = useState("2024");
+  const [histQuery, setHistQuery] = useState({
+    name: "João", country: "", yearFrom: "1980", yearTo: "2024",
+  });
 
-  const [trendName, setTrendName] = useState("");
+  const [trendName,    setTrendName]    = useState("");
   const [trendCountry, setTrendCountry] = useState("");
-  const [trendDays, setTrendDays] = useState(30);
+  const [trendDays,    setTrendDays]    = useState(30);
   const [trendQuery, setTrendQuery] = useState({ name: "", country: "", days: 30 });
 
   const historyResult = useQuery({
@@ -86,7 +82,12 @@ export function Growth() {
   });
 
   const applyHistory = useCallback(() => {
-    setHistQuery({ name: histName.trim(), country: histCountry.trim(), yearFrom: histYearFrom.trim(), yearTo: histYearTo.trim() });
+    setHistQuery({
+      name:     histName.trim(),
+      country:  histCountry.trim(),
+      yearFrom: histYearFrom.trim(),
+      yearTo:   histYearTo.trim(),
+    });
   }, [histName, histCountry, histYearFrom, histYearTo]);
 
   const applyTrends = useCallback(() => {
@@ -110,17 +111,13 @@ export function Growth() {
 
       <div className="container mx-auto px-4 py-16 space-y-20">
 
-        {/* ── HISTÓRICO CIVIL ── */}
+        {/* Civil History */}
         <section>
           <div className="flex items-center gap-4 mb-8">
             <span className="w-3 h-3 bg-accent block" />
-            <h2 className="text-2xl font-bold uppercase tracking-tighter">
-              {t("growth.civHistory")}
-            </h2>
+            <h2 className="text-2xl font-bold uppercase tracking-tighter">{t("growth.civHistory")}</h2>
           </div>
-          <p className="text-muted-foreground text-sm mb-6">
-            {t("growth.civDesc")}
-          </p>
+          <p className="text-muted-foreground text-sm mb-6">{t("growth.civDesc")}</p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="col-span-2 md:col-span-1">
@@ -128,9 +125,9 @@ export function Growth() {
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={histName}
-                onChange={e => setHistName(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && applyHistory()}
-                placeholder="ex: Maria"
+                onChange={(e) => setHistName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyHistory()}
+                placeholder="e.g.: Maria"
               />
             </div>
             <div>
@@ -138,9 +135,9 @@ export function Growth() {
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={histCountry}
-                onChange={e => setHistCountry(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && applyHistory()}
-                placeholder="ex: BR"
+                onChange={(e) => setHistCountry(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyHistory()}
+                placeholder="e.g.: BR"
               />
             </div>
             <div>
@@ -148,8 +145,8 @@ export function Growth() {
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={histYearFrom}
-                onChange={e => setHistYearFrom(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && applyHistory()}
+                onChange={(e) => setHistYearFrom(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyHistory()}
                 placeholder="1980"
               />
             </div>
@@ -158,8 +155,8 @@ export function Growth() {
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={histYearTo}
-                onChange={e => setHistYearTo(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && applyHistory()}
+                onChange={(e) => setHistYearTo(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyHistory()}
                 placeholder="2024"
               />
             </div>
@@ -175,17 +172,13 @@ export function Growth() {
           <HistoryChart data={historyResult.data} loading={historyResult.isLoading} name={histQuery.name} />
         </section>
 
-        {/* ── TENDÊNCIA EM TEMPO REAL ── */}
+        {/* Platform Trend */}
         <section>
           <div className="flex items-center gap-4 mb-8">
             <span className="w-3 h-3 bg-primary block" />
-            <h2 className="text-2xl font-bold uppercase tracking-tighter">
-              {t("growth.platform")}
-            </h2>
+            <h2 className="text-2xl font-bold uppercase tracking-tighter">{t("growth.platform")}</h2>
           </div>
-          <p className="text-muted-foreground text-sm mb-6">
-            {t("growth.platformDesc")}
-          </p>
+          <p className="text-muted-foreground text-sm mb-6">{t("growth.platformDesc")}</p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
             <div>
@@ -193,9 +186,9 @@ export function Growth() {
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={trendName}
-                onChange={e => setTrendName(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && applyTrends()}
-                placeholder="ex: Ana"
+                onChange={(e) => setTrendName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyTrends()}
+                placeholder="e.g.: Ana"
               />
             </div>
             <div>
@@ -203,15 +196,15 @@ export function Growth() {
               <input
                 className="w-full bg-card border border-border px-3 py-2 font-mono text-sm focus:outline-none focus:border-accent"
                 value={trendCountry}
-                onChange={e => setTrendCountry(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && applyTrends()}
-                placeholder="ex: BR"
+                onChange={(e) => setTrendCountry(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && applyTrends()}
+                placeholder="e.g.: BR"
               />
             </div>
             <div>
               <label className="text-xs text-muted-foreground uppercase block mb-1">{t("growth.period")}</label>
               <div className="flex flex-wrap gap-1">
-                {DAYS_OPTIONS.map(d => (
+                {DAYS_OPTIONS.map((d) => (
                   <button
                     key={d}
                     onClick={() => setTrendDays(d)}
@@ -252,9 +245,9 @@ function HistoryChart({ data, loading, name }: { data?: HistoryRow[]; loading: b
   if (!data) return null;
   if (data.length === 0) return <EmptyState message={t("growth.noHistory", { name })} />;
 
-  const chartData = data.map(r => ({
+  const chartData = data.map((r) => ({
     year: r.year,
-    pct: Number(r.participacao_pct.toFixed(4)),
+    pct:  Number(r.participacao_pct.toFixed(4)),
     total: r.total_nome,
   }));
 
@@ -272,21 +265,21 @@ function HistoryChart({ data, loading, name }: { data?: HistoryRow[]; loading: b
           <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                <stop offset="5%"  stopColor="hsl(var(--accent))" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}   />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis dataKey="year" tick={{ fontFamily: "monospace", fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
             <YAxis
-              tickFormatter={v => `${v}%`}
+              tickFormatter={(v) => `${v}%`}
               tick={{ fontFamily: "monospace", fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
               width={52}
             />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
               formatter={(v: number) => [`${v}%`, t("growth.participation")]}
-              labelFormatter={l => t("growth.year", { val: l })}
+              labelFormatter={(l) => t("growth.year", { val: l })}
             />
             <Area
               type="monotone"
@@ -312,27 +305,21 @@ function TrendsChart({ data, loading }: { data: Record<string, TrendRow[]>; load
   if (names.length === 0) return null;
 
   const allDays = Array.from(
-    new Set(names.flatMap(n => data[n].map(r => r.day)))
+    new Set(names.flatMap((n) => data[n].map((r) => r.day)))
   ).sort();
 
-  const chartData = allDays.map(day => {
+  const chartData = allDays.map((day) => {
     const point: Record<string, any> = { day };
     for (const n of names) {
-      const row = data[n].find(r => r.day === day);
+      const row = data[n].find((r) => r.day === day);
       point[n] = row ? Number(row.participacao_pct.toFixed(4)) : 0;
     }
     return point;
   });
 
   const COLORS = [
-    "hsl(var(--primary))",
-    "hsl(var(--accent))",
-    "#60a5fa",
-    "#f472b6",
-    "#34d399",
-    "#fb923c",
-    "#a78bfa",
-    "#fbbf24",
+    "hsl(var(--primary))", "hsl(var(--accent))",
+    "#60a5fa", "#f472b6", "#34d399", "#fb923c", "#a78bfa", "#fbbf24",
   ];
 
   return (
@@ -343,19 +330,21 @@ function TrendsChart({ data, loading }: { data: Record<string, TrendRow[]>; load
           <XAxis
             dataKey="day"
             tick={{ fontFamily: "monospace", fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-            tickFormatter={d => d?.slice(5) ?? ""}
+            tickFormatter={(d) => d?.slice(5) ?? ""}
           />
           <YAxis
-            tickFormatter={v => `${v}%`}
+            tickFormatter={(v) => `${v}%`}
             tick={{ fontFamily: "monospace", fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
             width={52}
           />
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
             formatter={(v: number, name: string) => [`${v}%`, name]}
-            labelFormatter={l => t("growth.day", { val: l })}
+            labelFormatter={(l) => t("growth.day", { val: l })}
           />
-          {names.length > 1 && <Legend wrapperStyle={{ fontFamily: "monospace", fontSize: 11, textTransform: "uppercase" }} />}
+          {names.length > 1 && (
+            <Legend wrapperStyle={{ fontFamily: "monospace", fontSize: 11, textTransform: "uppercase" }} />
+          )}
           {names.map((n, idx) => (
             <Bar key={n} dataKey={n} fill={COLORS[idx % COLORS.length]} isAnimationActive={false} />
           ))}
@@ -368,12 +357,13 @@ function TrendsChart({ data, loading }: { data: Record<string, TrendRow[]>; load
 function buildTrendsByName(rows: TrendRow[]): Record<string, TrendRow[]> {
   const map: Record<string, TrendRow[]> = {};
   for (const r of rows) {
-    const key = r.name_text;
-    if (!map[key]) map[key] = [];
-    map[key].push(r);
+    if (!map[r.name_text]) map[r.name_text] = [];
+    map[r.name_text].push(r);
   }
   const topNames = Object.entries(map)
-    .sort((a, b) => b[1].reduce((s, r) => s + r.total_nome, 0) - a[1].reduce((s, r) => s + r.total_nome, 0))
+    .sort((a, b) =>
+      b[1].reduce((s, r) => s + r.total_nome, 0) - a[1].reduce((s, r) => s + r.total_nome, 0)
+    )
     .slice(0, 8)
     .map(([k]) => k);
   const result: Record<string, TrendRow[]> = {};
@@ -390,9 +380,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ChartSkeleton() {
-  return <Skeleton className="h-72 w-full" />;
-}
+function ChartSkeleton() { return <Skeleton className="h-72 w-full" />; }
 
 function EmptyState({ message }: { message: string }) {
   return (
