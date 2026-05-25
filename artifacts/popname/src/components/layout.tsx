@@ -4,9 +4,9 @@ import { Menu, X, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const LANGUAGES = [
-  { code: "pt-BR", label: "Português" },
-  { code: "en",   label: "English" },
-  { code: "es",   label: "Español" },
+  { code: "pt-BR", label: "Português", short: "PT" },
+  { code: "en",   label: "English",   short: "EN" },
+  { code: "es",   label: "Español",   short: "ES" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -58,8 +58,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 aria-label={t("lang.label")}
               >
                 <Globe className="w-3.5 h-3.5" />
-                {LANGUAGES.find(l => l.code === i18n.language)?.label?.slice(0, 2).toUpperCase() ??
-                  LANGUAGES.find(l => i18n.language.startsWith(l.code.split("-")[0]))?.label?.slice(0, 2).toUpperCase() ??
+                {LANGUAGES.find(l => l.code === i18n.language)?.short ??
+                  LANGUAGES.find(l => i18n.language.startsWith(l.code.split("-")[0]))?.short ??
                   "PT"}
               </button>
               {langOpen && (
