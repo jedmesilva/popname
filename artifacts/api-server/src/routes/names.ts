@@ -449,27 +449,27 @@ router.get("/names/rare", async (req, res): Promise<void> => {
 
 // GET /names/by-decade
 router.get("/names/by-decade", async (_req, res): Promise<void> => {
-  const { rows } = await pool.query(
-    `SELECT name, birth_decade FROM name_by_generation ORDER BY birth_decade, total DESC`
-  );
+  const base = Math.floor(new Date().getFullYear() / 10) * 10;
+  const lastSixDecades: number[] = [0,1,2,3,4,5].map(i => base - (5-i)*10);
 
-  if (!rows.length) {
-    const { rows: topRows } = await pool.query(
-      `SELECT name FROM name_ranking ORDER BY rank LIMIT 5`
-    );
-    const names = topRows.map((r: any) => r.name);
-    const base = Math.floor(new Date().getFullYear() / 10) * 10;
-    res.json([0,1,2,3,4,5].map(i => ({ decade: base - (5-i)*10, names })));
-    return;
-  }
+  const [{ rows }, { rows: topRows }] = await Promise.all([
+    pool.query(`SELECT name, birth_decade FROM name_by_generation ORDER BY birth_decade, total DESC`),
+    pool.query(`SELECT name FROM name_ranking ORDER BY rank LIMIT 5`),
+  ]);
+
+  const fallbackNames = topRows.map((r: any) => r.name as string);
 
   const decadeMap = new Map<number, string[]>();
   for (const r of rows) {
     const d = Number(r.birth_decade);
     if (!decadeMap.has(d)) decadeMap.set(d, []);
-    decadeMap.get(d)!.push(r.name);
+    decadeMap.get(d)!.push(r.name as string);
   }
-  res.json(Array.from(decadeMap.entries()).map(([decade, names]) => ({ decade, names })));
+
+  res.json(lastSixDecades.map(decade => ({
+    decade,
+    names: decadeMap.get(decade) ?? fallbackNames,
+  })));
 });
 
 // GET /names/by-country — top name per country for the home card
