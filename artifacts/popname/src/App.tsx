@@ -41,7 +41,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/name/:name" component={NameDetail} />
-        <Route path="/explore" component={Explore} />
+        <Route path="/index" component={Explore} />
         <Route path="/trends" component={Trends} />
         <Route path="/claim" component={Claim} />
         <Route path="/search" component={SearchResults} />

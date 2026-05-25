@@ -18,7 +18,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navLinks = [
     { href: "/",        label: t("nav.home") },
-    { href: "/explore", label: t("nav.index") },
+    { href: "/index", label: t("nav.index") },
     { href: "/trends",  label: t("nav.trends") },
     { href: "/growth",  label: t("nav.growth") },
   ];
